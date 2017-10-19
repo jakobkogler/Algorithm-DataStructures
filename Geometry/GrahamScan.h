@@ -11,7 +11,7 @@ class Point
 public:
     Point(int x, int y) : x(x), y(y) {}
 
-    int dist2(Point const &other)
+    int dist2(Point const &other) const
     {
         return square(x - other.x) + square(y - other.y);
     }
@@ -24,7 +24,6 @@ public:
         return (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
     }
 
-private:
     int x, y;
 };
 
@@ -34,7 +33,7 @@ std::vector<Point> GrahamScan(std::vector<Point> points)
         return std::make_pair(p.y, p.x) < std::make_pair(q.y, q.x);
     });
     sort(points.begin() + 1, points.end(), [ref = points[0]](auto const &p, auto const &q) {
-         int orientation = ccw(ref, p, q);
+         int orientation = Point::ccw(ref, p, q);
          if (orientation < 0)
              return true;
          if (orientation == 0)
@@ -47,12 +46,12 @@ std::vector<Point> GrahamScan(std::vector<Point> points)
     result.push_back(points[1]);
     int sz = 2;
     for (int i = 2; i < static_cast<int>(points.size()); i++) {
-        if (Point::ccw(result[sz - 2], result[sz - 1], points[i]) >= 0) {
-            result[sz - 1] = points[i];
-        } else {
-            sz++;
-            result.push_back(points[i]);
+        while (sz > 1 && Point::ccw(result[sz - 2], result[sz - 1], points[i]) >= 0) {
+            sz--;
+            result.pop_back();
         }
+        sz++;
+        result.push_back(points[i]);
     }
 
     return result;
