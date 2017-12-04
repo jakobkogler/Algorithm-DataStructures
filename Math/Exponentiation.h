@@ -3,6 +3,7 @@ int MOD = 1e9 + 7;
 long long power(long long base, int e)
 {
     long long result = 1;
+    base %= MOD;
     while (e) {
         if (e & 1)
             result = (result * base) % MOD;
