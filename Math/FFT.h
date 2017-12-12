@@ -71,6 +71,32 @@ namespace FFT
         return inverse;
     }
 
+    vcd fft_rec(const vcd& as) {
+        int n = as.size();
+        if (n == 1) {
+            return as;
+        }
+
+        vcd P0(n / 2);
+        vcd P1(n / 2);
+        for (int i = 0; i < n / 2; i++) {
+            P0[i] = as[2 * i];
+            P1[i] = as[2 * i + 1];
+        }
+        auto S0 = fft(P0);
+        auto S1 = fft(P1);
+
+        cd step = {cos(2 * M_PI / n), sin(2 * M_PI / n)};
+        cd w = 1;
+        vcd answer(n);
+        for (int k = 0; k < n / 2; k++) {
+            answer[k] = S0[k] + w * S1[k];
+            answer[k + n / 2] = S0[k] - w * S1[k];
+            w *= step;
+        }
+        return answer;
+    }
+
     vcd multiply(const vcd& a, const vcd& b) {
         auto c = a;
         for (int i = 0; i < (int)c.size(); i++) {
