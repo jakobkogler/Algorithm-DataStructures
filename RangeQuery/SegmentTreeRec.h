@@ -1,10 +1,10 @@
 #include <limits>
 #include <vector>
 
-class SegmentTreeRecLazy
+class SegmentTreeRec
 {
 public:
-    SegmentTreeRecLazy(int n) : n(n) { data.assign(4 * n, 0); }
+    SegmentTreeRec(int n) : n(n) { data.assign(4 * n, 0); }
 
     int minimum(int x, int y, int id = 1, int l = 0, int r = -1)
     {
