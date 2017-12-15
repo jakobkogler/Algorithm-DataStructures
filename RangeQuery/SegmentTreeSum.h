@@ -10,7 +10,7 @@ public:
 
 	SegmentTree(std::vector<int> const &values) {
 		n = values.size();
-		data = std::vector<int>(2 * n);
+		data.resize(2 * n);
 		std::copy(values.begin(), values.end(), &data[0] + n);
 		for (int idx = n - 1; idx > 0; idx--)
 			data[idx] = data[2 * idx] + data[2 * idx + 1];
