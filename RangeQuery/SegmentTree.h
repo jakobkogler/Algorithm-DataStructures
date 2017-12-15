@@ -5,7 +5,7 @@ class SegmentTree {
 public:
 	SegmentTree(int count) {
 		n = count;
-		data = std::vector<int>(2 * n, 0);
+		data.assign(2 * n, 0);
 	}
 
 	SegmentTree(std::vector<int> const &values) {
