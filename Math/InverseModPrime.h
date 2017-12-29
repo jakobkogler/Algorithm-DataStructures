@@ -2,13 +2,14 @@
 
 int MOD = 1'000'000'007;
 
-auto power(long long base, int e)
+long long power(long long base, int e, int M=MOD)
 {
     long long result = 1;
+    base %= M;
     while (e) {
         if (e & 1)
-            result = (result * base) % MOD;
-        base = (base * base) % MOD;
+            result = (result * base) % M;
+        base = (base * base) % M;
         e >>= 1;
     }
     return result;
