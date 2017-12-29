@@ -1,21 +1,21 @@
 #include <vector>
 
 std::vector<std::vector<int>> adj;
-std::vector<int> side;
+std::vector<int> color;
 
-bool bipartite(int v, int p = -1, int s = 0)
+bool bipartite(int v = 0, int p = -1, int c = 0)
 {
     if (p == -1)
-        side.assign(adj.size(), -1);
+        color.assign(adj.size(), -1);
 
-    if (side[v] >= 0)
-        return side[v] == s;
-    side[v] = s;
+    if (color[v] >= 0)
+        return color[v] == c;
+    color[v] = c;
 
-    for (int u : adj[v]) {
+    for (auto u : adj[v]) {
         if (u == p)
             continue;
-        if (!bipartite(u, v, s ^ 1))
+        if (!bipartite(u, v, c ^ 1))
             return false;
     }
 
