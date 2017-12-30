@@ -1,26 +1,19 @@
 #include <vector>
 #include <limits>
+#include <functional>
 
-struct Segment {
-
-};
-
-Segment combine(Segment a, Segment b) {
-    return a;
-}
-
+template<typename Segment>
 class SegmentTree {
 public:
-	SegmentTree(int count) {
+	SegmentTree(int count, std::function<Segment(Segment, Segment)> combine) : combine{combine} {
 		n = count;
 		data.resize(2 * n);
 	}
 
-	SegmentTree(std::vector<Segment> const &values) {
+	SegmentTree(std::vector<Segment> const &values, std::function<Segment(Segment, Segment)> combine) : combine{combine} {
 		n = values.size();
 		data.resize(2 * n);
-        for (int idx = 0; idx < n; idx++)
-            data[idx + n] = values[idx];
+    std::copy(values.begin(), values.end(), &data[0] + n);
 		for (int idx = n - 1; idx > 0; idx--)
 			data[idx] = combine(data[idx * 2], data[idx * 2 + 1]);
 	}
@@ -36,9 +29,9 @@ public:
 	}
 
 	Segment minimum(int left, int right) { // interval [left, right)
-		Segment ret_l, ret_r;
 		left += n;
 		right += n;
+		Segment ret_l = data[left++], ret_r = data[--right];
 
 		while (left < right) {
 			if (left & 1) ret_l = combine(ret_l, data[left++]);
@@ -52,4 +45,5 @@ public:
 private:
 	int n;
 	std::vector<Segment> data;
+	std::function<Segment(Segment, Segment)> combine;
 };
