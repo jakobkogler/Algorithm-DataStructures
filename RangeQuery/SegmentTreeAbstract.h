@@ -31,9 +31,13 @@ public:
     }
 
     Segment minimum(int left, int right) { // interval [left, right)
-        Segment ret_l{}, ret_r{};
         left += n;
         right += n;
+
+        if (left + 1 == right)
+            return data[left];
+
+        Segment ret_l = data[left++], ret_r = data[--right];
 
         while (left < right) {
             if (left & 1) ret_l = combine(ret_l, data[left++]);
