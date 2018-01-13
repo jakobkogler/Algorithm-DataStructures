@@ -4,7 +4,10 @@
 class SCC
 {
 public:
-    SCC(int n) : n(n) {}
+    SCC(int n) : n(n) {
+        adj.resize(n);
+        adj_t.resize(n);
+    }
 
     void add_edge(int u, int v)
     {
