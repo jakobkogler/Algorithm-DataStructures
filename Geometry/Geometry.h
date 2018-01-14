@@ -9,14 +9,6 @@ static double det(double a11, double a12, double a21, double a22) {
 class Vector {
 public:
     Vector(double x, double y) : x(x), y(y) {}
-    
-    double length2() const {
-        return x*x + y*y;
-    }
-
-    double length() const {
-        return sqrt(length2());
-    }
 
     Vector& operator+=(Vector const& v) { x += v.x; y += v.y; return *this; }
     Vector operator+(Vector const& v) const { Vector u = *this; u += v; return u; }
@@ -26,8 +18,28 @@ public:
     Vector operator*(double const& c) const { Vector u = *this; u *= c; return u; }
     Vector& operator/=(double const c) { x /= c; y /= c; return *this; }
     Vector operator/(double const& c) const { Vector u = *this; u /= c; return u; }
-    bool operator==(Vector const& v) { return std::abs(x - v.x) < EPS && std::abs(y - v.y) < EPS; }
-    bool operator!=(Vector const& v) { return !(*this == v); }
+    bool operator==(Vector const& v) const { return std::abs(x - v.x) < EPS && std::abs(y - v.y) < EPS; }
+    bool operator!=(Vector const& v) const { return !(*this == v); }
+    double operator*(Vector const& v) const { return x*v.x + y*v.y; }
+
+    
+    double length2() const {
+        return x*x + y*y;
+    }
+
+    double length() const {
+        return sqrt(length2());
+    }
+
+    void normalize() {
+        double l = length();
+        x /= l;
+        y /= l;
+    }
+
+    double angle(Vector const& v) const {
+        return acos(*this * v / length() / v.length());
+    }
 
     double x, y;
 };
@@ -82,6 +94,10 @@ public:
         double x = -det(c, b, other.c, other.b) / d;
         double y = -det(a, c, other.a, other.c) / d;
         return {x, y};
+    }
+
+    double distance(Point const& p) const {
+        return std::abs(a*p.x + b*p.y + c) / Vector(a, b).length();
     }
 
     double a, b, c;
