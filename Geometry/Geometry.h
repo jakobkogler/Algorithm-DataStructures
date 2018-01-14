@@ -22,13 +22,16 @@ public:
     bool operator!=(Vector const& v) const { return !(*this == v); }
     double operator*(Vector const& v) const { return x*v.x + y*v.y; }
 
-    
     double length2() const {
         return x*x + y*y;
     }
 
     double length() const {
         return sqrt(length2());
+    }
+
+    double atan2_angle() const {
+        return atan2(y, x);
     }
 
     void normalize() {
