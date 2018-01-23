@@ -10,6 +10,27 @@ public:
         todo.assign(4 * n, 0);
     }
 
+    SegmentTreeRecLazy(std::vector<int> const& v) {
+        n = v.size();
+        data.assign(4 * n, 0);
+        todo.assign(4 * n, 0);
+        build(v);
+    }
+
+    void build(std::vector<int> const& v, int id = 1, int l = 0, int r = -1) {
+        if (r == -1)
+            r = n;
+
+        if (l == r - 1) {
+            data[id] = v[l];
+        } else {
+            int m = (l + r) >> 1;
+            build(v, id << 1, l, m);
+            build(v, id << 1 | 1, m, r);
+            data[id] = std::min(data[id << 1], data[id << 1 | 1]);
+        }
+    }
+
     int minimum(int x, int y, int id = 1, int l = 0, int r = -1)
     {
         if (r == -1)
