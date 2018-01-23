@@ -1,9 +1,11 @@
+#include <algorithm>
+
 class Fraction
 {
 public:
     Fraction() : a(0), b(1) {}
     Fraction(long long a) : a(a), b(1) {}
-    Fraction(long long a, long long b) : a(a), b(b) {
+    Fraction(long long num, long long den) : a(num), b(den) {
         long long g = gcd(a, b);
         a /= g;
         b /= g;
@@ -12,7 +14,7 @@ public:
     Fraction& operator+=(Fraction const& other) {
         long long g = gcd(b, other.b);
         a = a * (other.b / g) + (b / g) * other.a;
-        b = a / g * b;
+        b = b / g * other.b;
         return *this;
     }
 
@@ -23,7 +25,7 @@ public:
     Fraction& operator-=(Fraction const& other) {
         long long g = gcd(b, other.b);
         a = a * (other.b / g) - (b / g) * other.a;
-        b = a / g * b;
+        b = b / g * other.b;
         return *this;
     }
 
@@ -76,14 +78,28 @@ public:
         return a * other.b != other.a * b;
     }
 
+    long long floor() const {
+        return a / b;
+    }
+
     static long long gcd(long long a, long long b) {
-        while (b > 1) {
-            long long tmp = b;
-            b = a % b;
-            a = tmp;
+        while (b > 0) {
+            a %= b;
+            std::swap(a, b);
         }
         return a;
     }
 
     long long a, b;
 };
+
+Fraction operator+(long long x, Fraction const& f) { return Fraction(x) + f; }
+Fraction operator-(long long x, Fraction const& f) { return Fraction(x) - f; }
+Fraction operator*(long long x, Fraction const& f) { return Fraction(x) * f; }
+Fraction operator/(long long x, Fraction const& f) { return Fraction(x) / f; }
+bool operator<(long long x, Fraction const& f) { return Fraction(x) < f; }
+bool operator<=(long long x, Fraction const& f) { return Fraction(x) <= f; }
+bool operator>(long long x, Fraction const& f) { return Fraction(x) > f; }
+bool operator>=(long long x, Fraction const& f) { return Fraction(x) >= f; }
+bool operator==(long long x, Fraction const& f) { return Fraction(x) == f; }
+bool operator!=(long long x, Fraction const& f) { return Fraction(x) != f; }
