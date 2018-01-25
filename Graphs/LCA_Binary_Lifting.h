@@ -18,7 +18,8 @@ public:
 
         for (int l = 1; l < log; l++) {
             for (int v = 0; v < n; v++) {
-                parents[l][v] = parents[l - 1][parents[l - 1][v]];
+                if (parents[l - 1][v] >= 0)
+                    parents[l][v] = parents[l - 1][parents[l - 1][v]];
             }
         }
     }
