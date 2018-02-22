@@ -55,7 +55,7 @@ public:
     Point operator+(Vector const& v) const { Point p = *this; p += v; return p; }
     Point& operator-=(Vector const& v) { x -= v.x; y -= v.y; return *this; }
     Point operator-(Vector const& v) const { Point p = *this; p -= v; return p; }
-    Vector operator-(Point const& p) const { return {p.x - x, p.y - y}; }
+    Vector operator-(Point const& p) const { return {x - p.x, y - p.y}; }
     bool operator==(Point const& p) { return std::abs(x - p.x) < EPS && std::abs(y - p.y) < EPS; }
     bool operator!=(Point const& p) { return !(*this == p); }
 
