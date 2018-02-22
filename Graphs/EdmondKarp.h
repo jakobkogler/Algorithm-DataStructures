@@ -6,10 +6,18 @@
 class EdmondKarp
 {
 public:
-    EdmondKarp(int n, std::vector<std::vector<int>> capacity, std::vector<std::vector<int>> adj)
-        : n(n), capacity(capacity), adj(adj) {}
+    EdmondKarp(int n, std::vector<std::vector<int>> capacity)
+        : n(n), capacity(capacity) {}
  
     int maxflow(int s, int t) {
+        adj.resize(n);
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (capacity[i][j] || capacity[j][i])
+                    adj[i].push_back(j);
+            }
+        }
+
         int flow = 0;
  
         std::vector<int> parent(n);
@@ -58,6 +66,3 @@ public:
     std::vector<std::vector<int>> capacity;
     std::vector<std::vector<int>> adj;
 };
-
-
-
