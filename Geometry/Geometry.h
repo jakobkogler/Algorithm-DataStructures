@@ -1,9 +1,14 @@
 #include <cmath>
+#include <vector>
 
 static constexpr double EPS = 1e-9;
 
 static double det(double a11, double a12, double a21, double a22) {
     return a11 * a22 - a12 * a21;
+}
+
+static double sq(double x) {
+    return x * x;
 }
 
 class Vector {
@@ -23,7 +28,7 @@ public:
     double operator*(Vector const& v) const { return x*v.x + y*v.y; }
 
     double length2() const {
-        return x*x + y*y;
+        return sq(x) + sq(y);
     }
 
     double length() const {
@@ -104,4 +109,48 @@ public:
     }
 
     double a, b, c;
+};
+
+class Circle {
+public:
+    Circle(Point m, double r) : m(m), r(r) {}
+    Circle(double r) : m({0, 0}), r(r) {}
+
+    bool inside(Point p) {
+        return (p - m).length2() < r*r;
+    }
+
+    std::vector<Point> intersect(Line line) {
+        std::vector<Point> intersections;
+        double a = line.a;
+        double b = line.b;
+        double c = a*m.x + b*m.y + line.c;
+        double d2 = sq(a) + sq(b);
+        Point closest(-a*c/d2, -b*c/d2);
+
+        double diff = sq(r)*d2 - sq(c);
+        if (diff > EPS) {
+            double d = sq(r) - sq(c)/d2;
+            double factor = sqrt(d / d2);
+            intersections.push_back(closest + Vector{b, -a} * factor);
+            intersections.push_back(closest + Vector{-b, a} * factor);
+        } else if (std::abs(diff) <= EPS) {
+            intersections.push_back(closest);
+        }
+
+        for (auto& p : intersections)
+            p += Vector{m.x, m.y};
+        return intersections;
+    }
+
+    std::vector<Point> intersect(Circle other) {
+        Line line(2*(other.m.x - m.x), 
+                  2*(other.m.y - m.y), 
+                  sq(other.r) - sq(r) + sq(m.x) + sq(m.y)
+                  - sq(other.m.x) - sq(other.m.y));
+        return intersect(line);
+    }
+
+    Point m;
+    double r;
 };
