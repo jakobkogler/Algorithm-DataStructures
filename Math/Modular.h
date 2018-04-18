@@ -68,6 +68,14 @@ public:
         return os << a.value;
     }
 
+    friend bool operator==(Modular const& a, Modular const& b) {
+        return a.value == b.value;
+    }
+
+    friend bool operator!=(Modular const& a, Modular const& b) {
+        return a.value != b.value;
+    }
+
     long long value;
 };
 
