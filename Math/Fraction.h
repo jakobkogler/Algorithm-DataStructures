@@ -7,6 +7,8 @@ public:
     Fraction(long long a) : a(a), b(1) {}
     Fraction(long long num, long long den) : a(num), b(den) {
         long long g = gcd(a, b);
+        if (b < 0)
+            g = -g;
         a /= g;
         b /= g;
     }
@@ -46,7 +48,7 @@ public:
     }
 
     Fraction& operator/=(Fraction const& other) {
-        *this *= Fraction(other.b, other.a);
+        *this *= Fraction(copy_sign(other.b, other.a), std::abs(other.a));
         return *this;
     }
 
@@ -82,24 +84,23 @@ public:
         return a / b;
     }
 
+    operator double() const {
+        return (double)a / b;
+    }
+
     static long long gcd(long long a, long long b) {
-        while (b > 0) {
+        a = std::abs(a);
+        b = std::abs(b);
+        while (b) {
             a %= b;
             std::swap(a, b);
         }
         return a;
     }
 
+    static long long copy_sign(long long a, long long b) {
+        return b >= 0 ? a : -a;
+    }
+
     long long a, b;
 };
-
-Fraction operator+(long long x, Fraction const& f) { return Fraction(x) + f; }
-Fraction operator-(long long x, Fraction const& f) { return Fraction(x) - f; }
-Fraction operator*(long long x, Fraction const& f) { return Fraction(x) * f; }
-Fraction operator/(long long x, Fraction const& f) { return Fraction(x) / f; }
-bool operator<(long long x, Fraction const& f) { return Fraction(x) < f; }
-bool operator<=(long long x, Fraction const& f) { return Fraction(x) <= f; }
-bool operator>(long long x, Fraction const& f) { return Fraction(x) > f; }
-bool operator>=(long long x, Fraction const& f) { return Fraction(x) >= f; }
-bool operator==(long long x, Fraction const& f) { return Fraction(x) == f; }
-bool operator!=(long long x, Fraction const& f) { return Fraction(x) != f; }
