@@ -68,8 +68,22 @@ public:
     }
 
     template <typename T>
+    std::vector<long long> multiply_brute_force(std::vector<T> const& a, std::vector<T> const& b, int sz) {
+        std::vector<long long> result(sz);
+        for (int i = 0; i < (int)a.size(); i++) {
+            for (int j = 0; j < (int)b.size(); j++) {
+                result[i + j] += a[i] * b[j];
+            }
+        }
+        return result;
+    }
+
+    template <typename T>
     std::vector<long long> multiply(std::vector<T> const& a, std::vector<T> const& b) {
-        int sz = a.size() + b.size() - 1;
+        int result_size = a.size() + b.size() - 1;
+        if (result_size <= 200)
+            return multiply_brute_force(a, b, result_size);
+
         vcd fa(a.begin(), a.end()), fb(b.begin(), b.end());
         fa.resize(size);
         fb.resize(size);
@@ -80,8 +94,8 @@ public:
             fa[i] *= fb[i];
         fft(fa, true);
 
-        std::vector<long long> result(sz);
-        for (int i = 0; i < sz; i++)
+        std::vector<long long> result(result_size);
+        for (int i = 0; i < result_size; i++)
             result[i] = std::llround(fa[i].real());
         return result;
     }
