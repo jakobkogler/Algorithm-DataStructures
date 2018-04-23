@@ -95,6 +95,18 @@ public:
         return os;
     }
 
+    friend BigInteger power(BigInteger base, int e)
+    {
+        BigInteger result = 1;
+        while (e) {
+            if (e & 1)
+                result = result * base;
+            base = base * base;
+            e >>= 1;
+        }
+        return result;
+    }
+
 private:
     static int const BITS_PER_BLOCK = 31;
     static int const BLOCK_CNT = (BITS + BITS_PER_BLOCK - 1u) / BITS_PER_BLOCK;
