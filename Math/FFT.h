@@ -100,6 +100,40 @@ public:
         return result;
     }
 
+    std::vector<int> multiply_mod(std::vector<int> const& a, std::vector<int> const& b, int const mod) {
+        int result_size = a.size() + b.size() - 1;
+
+        vcd v1(size), v2(size);
+        for (int i = 0; i < (int)a.size(); i++)
+            v1[i] = cd(a[i] >> 15, a[i] & 32767);
+        for (int i = 0; i < (int)b.size(); i++)
+            v2[i] = cd(b[i] >> 15, b[i] & 32767);
+        fft(v1, false);
+        fft(v2, false);
+
+        vcd r1(size), r2(size);
+        for (int i = 0; i < size; i++) {
+            int j = i ? size - i : i;
+            cd a = (v1[i] + conj(v1[j])) * cd(0.5, 0);
+            cd b = (v1[i] - conj(v1[j])) * cd(0, -0.5);
+            cd c = (v2[i] + conj(v2[j])) * cd(0.5, 0);
+            cd d = (v2[i] - conj(v2[j])) * cd(0, -0.5);
+            r1[i] = a*c + a*d*cd(0,1);
+            r2[i] = b*c + b*d*cd(0,1);
+        }
+        fft(r1, true);
+        fft(r2, true);
+
+        std::vector<int> result(result_size);
+        for (int i = 0; i < result_size; i++) {
+            long long a = std::llround(r1[i].real()) % mod;
+            long long b = std::llround(r1[i].imag() + r2[i].real()) % mod;
+            long long c = std::llround(r2[i].imag()) % mod;
+            result[i] = ((a << 30) + (b << 15) + c) % mod;
+        }
+        return result;
+    }
+
 private:
     int size;
     int lg;
