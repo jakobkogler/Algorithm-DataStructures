@@ -1,6 +1,8 @@
 #include <array>
 #include <cstdint>
 #include <iostream>
+#include <vector>
+#include <algorithm>
 
 template <int BITS>
 class BigInteger
@@ -86,7 +88,7 @@ public:
             digits.push_back(digit.blocks[0]);
             num = div_mod.first;
         }
-        reverse(digits.begin(), digits.end());
+        std::reverse(digits.begin(), digits.end());
         for (auto digit : digits) {
             os << digit;
         }
