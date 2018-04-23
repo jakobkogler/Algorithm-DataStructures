@@ -1,5 +1,6 @@
 #include <vector>
 #include <complex>
+#include <algorithm>
 
 class FFT {
 public:
@@ -10,7 +11,10 @@ public:
             size <<= 1;
             lg++;
         }
+        precompute();
+    }
 
+    void precompute() {
         reverse.assign(size, 0);
         for (int i = 1, j = 0; i < size; i++) {
             int bit = size >> 1;
@@ -19,38 +23,53 @@ public:
             j ^= bit;
             reverse[i] = j;
         }
+
+        const double PI = acos(-1);
+        ws.resize(lg);
+        ws[lg-1].resize(size >> 1);
+        for (int i = 0; i < (size >> 1); i++) {
+            double ang = 2 * PI * i / size;
+            ws[lg-1][i] = {cos(ang), sin(ang)};
+        }
+        for (int j = lg - 2; j >= 0; j--) {
+            int sz_level = ws[j+1].size() >> 1;
+            ws[j].resize(sz_level);
+            for (int i = 0; i < sz_level; i++)
+                ws[j][i] = ws[j+1][i<<1];
+        }
     }
 
     using cd = std::complex<double>;
     using vcd = std::vector<cd>;
 
-    void fft(vcd & a, bool invert) {
+    void fft(vcd & a, bool inv) {
         for (int i = 0; i < size; i++) {
             if (i < reverse[i])
                 swap(a[i], a[reverse[i]]);
         }
 
-        for (int len = 1; len < size; len <<= 1) {
-            double ang = PI / len * (invert ? -1 : 1);
-            cd wlen(cos(ang), sin(ang));
+        for (int k = 0; k < lg; k++) {
+            int len = 1 << k;
+            auto& w = ws[k];
             for (int i = 0; i < size; i += 2*len) {
-                cd w(1);
                 for (int j = 0; j < len; j++) {
-                    cd u = a[i+j], v = a[i+j+len] * w;
+                    cd u = a[i+j], v = a[i+j+len] * w[j];
                     a[i+j] = u + v;
                     a[i+j+len] = u - v;
-                    w *= wlen;
                 }
             }
         }
 
-        if (invert) {
+        if (inv) {
             for (cd & x : a)
                 x /= size;
+            std::reverse(a.begin() + 1, a.end());
         }
     }
 
-    std::vector<int> multiply(std::vector<int> const& a, std::vector<int> const& b) {
+    template <typename T>
+    std::vector<long long> multiply(std::vector<T> const& a, std::vector<T> const& b) {
+        int sz = a.size() + b.size() - 1;
         vcd fa(a.begin(), a.end()), fb(b.begin(), b.end());
         fa.resize(size);
         fb.resize(size);
@@ -61,9 +80,9 @@ public:
             fa[i] *= fb[i];
         fft(fa, true);
 
-        std::vector<int> result(size);
-        for (int i = 0; i < size; i++)
-            result[i] = round(fa[i].real());
+        std::vector<long long> result(sz);
+        for (int i = 0; i < sz; i++)
+            result[i] = std::llround(fa[i].real());
         return result;
     }
 
@@ -71,5 +90,5 @@ private:
     int size;
     int lg;
     std::vector<int> reverse;
-    double PI = acos(-1);
+    std::vector<vcd> ws;
 };
