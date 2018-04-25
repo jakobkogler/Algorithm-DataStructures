@@ -5,25 +5,10 @@
 class FFT {
 public:
     FFT(int max_degree) {
-        size = 1;
-        lg = 0;
-        while (size < max_degree + 1) {
-            size <<= 1;
-            lg++;
-        }
-        precompute();
-    }
+        int lg = get_lg(max_degree + 1);
+        reverse.resize(lg + 1);
 
-    void precompute() {
-        reverse.assign(size, 0);
-        for (int i = 1, j = 0; i < size; i++) {
-            int bit = size >> 1;
-            for (; j & bit; bit >>= 1)
-                j ^= bit;
-            j ^= bit;
-            reverse[i] = j;
-        }
-
+        int size = 1 << lg;
         const double PI = acos(-1);
         ws.resize(lg);
         ws[lg-1].resize(size >> 1);
@@ -39,13 +24,35 @@ public:
         }
     }
 
+    int get_lg(int x) {
+        return x ? 32 - __builtin_clz(x - 1) : 0;
+    }
+
+    void precompute_reverse(int lg) {
+        int size = 1 << lg;
+        reverse[lg].assign(size, 0);
+        for (int i = 1, j = 0; i < size; i++) {
+            int bit = size >> 1;
+            for (; j & bit; bit >>= 1)
+                j ^= bit;
+            j ^= bit;
+            reverse[lg][i] = j;
+        }
+    }
+
     using cd = std::complex<double>;
     using vcd = std::vector<cd>;
 
     void fft(vcd & a, bool inv) {
+        int lg = get_lg(a.size());
+        if (reverse[lg].empty())
+            precompute_reverse(lg);
+        int size = 1 << lg;
+
+        auto& rev = reverse[lg];
         for (int i = 0; i < size; i++) {
-            if (i < reverse[i])
-                swap(a[i], a[reverse[i]]);
+            if (i < rev[i])
+                swap(a[i], a[rev[i]]);
         }
 
         for (int k = 0; k < lg; k++) {
@@ -85,6 +92,7 @@ public:
             return multiply_brute_force(a, b, result_size);
 
         vcd fa(a.begin(), a.end()), fb(b.begin(), b.end());
+        int size = 1 << get_lg(result_size);
         fa.resize(size);
         fb.resize(size);
 
@@ -102,6 +110,7 @@ public:
 
     std::vector<int> multiply_mod(std::vector<int> const& a, std::vector<int> const& b, int const mod) {
         int result_size = a.size() + b.size() - 1;
+        int size = 1 << get_lg(result_size);
 
         vcd v1(size), v2(size);
         for (int i = 0; i < (int)a.size(); i++)
@@ -114,29 +123,27 @@ public:
         vcd r1(size), r2(size);
         for (int i = 0; i < size; i++) {
             int j = i ? size - i : i;
-            cd a = (v1[i] + conj(v1[j])) * cd(0.5, 0);
-            cd b = (v1[i] - conj(v1[j])) * cd(0, -0.5);
-            cd c = (v2[i] + conj(v2[j])) * cd(0.5, 0);
-            cd d = (v2[i] - conj(v2[j])) * cd(0, -0.5);
-            r1[i] = a*c + a*d*cd(0,1);
-            r2[i] = b*c + b*d*cd(0,1);
+            cd ans1 = (v1[i] + conj(v1[j])) * cd(0.5, 0);
+            cd ans2 = (v1[i] - conj(v1[j])) * cd(0, -0.5);
+            cd ans3 = (v2[i] + conj(v2[j])) * cd(0.5, 0);
+            cd ans4 = (v2[i] - conj(v2[j])) * cd(0, -0.5);
+            r1[i] = ans1*ans3 + ans1*ans4*cd(0,1);
+            r2[i] = ans2*ans3 + ans2*ans4*cd(0,1);
         }
         fft(r1, true);
         fft(r2, true);
 
         std::vector<int> result(result_size);
         for (int i = 0; i < result_size; i++) {
-            long long a = std::llround(r1[i].real()) % mod;
-            long long b = std::llround(r1[i].imag() + r2[i].real()) % mod;
-            long long c = std::llround(r2[i].imag()) % mod;
-            result[i] = ((a << 30) + (b << 15) + c) % mod;
+            long long ans1 = std::llround(r1[i].real()) % mod;
+            long long ans2 = std::llround(r1[i].imag() + r2[i].real()) % mod;
+            long long ans3 = std::llround(r2[i].imag()) % mod;
+            result[i] = ((ans1 << 30) + (ans2 << 15) + ans3) % mod;
         }
         return result;
     }
 
 private:
-    int size;
-    int lg;
-    std::vector<int> reverse;
+    std::vector<std::vector<int>> reverse;
     std::vector<vcd> ws;
 };
