@@ -29,8 +29,7 @@ public:
     }
 
     Modular& operator*=(Modular const& b) {
-        value *= b.value;
-        value %= MOD;
+        value = (long long)value * b.value % MOD;
         return *this;
     }
 
@@ -81,7 +80,7 @@ public:
         return a.value != b.value;
     }
 
-    long long value;
+    int value;
 };
 
 using ModInt = Modular<1'000'000'007>;
