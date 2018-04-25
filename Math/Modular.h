@@ -9,6 +9,11 @@ public:
             value += MOD;
     }
 
+    Modular(long long a, long long b) : value(0) {
+        *this += a;
+        *this /= b;
+    }
+
     Modular& operator+=(Modular const& b) {
         value += b.value;
         if (value >= MOD)
