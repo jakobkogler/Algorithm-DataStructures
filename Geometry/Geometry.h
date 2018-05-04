@@ -1,33 +1,37 @@
 #include <cmath>
 #include <vector>
+#include <numeric>
 
-static constexpr double EPS = 1e-9;
+constexpr double EPS = 1e-9;
 
-static double det(double a11, double a12, double a21, double a22) {
+template <class T>
+T det(T a11, T a12, T a21, T a22) {
     return a11 * a22 - a12 * a21;
 }
 
-static double sq(double x) {
+template <class T>
+T sq(T x) {
     return x * x;
 }
 
+template <class T>
 class Vector {
 public:
-    Vector(double x, double y) : x(x), y(y) {}
+    Vector(T x, T y) : x(x), y(y) {}
 
     Vector& operator+=(Vector const& v) { x += v.x; y += v.y; return *this; }
     Vector operator+(Vector const& v) const { Vector u = *this; u += v; return u; }
     Vector& operator-=(Vector const& v) { x -= v.x; y -= v.y; return *this; }
     Vector operator-(Vector const& v) const { Vector u = *this; u -= v; return u; }
-    Vector& operator*=(double const c) { x *= c; y *= c; return *this; }
-    Vector operator*(double const& c) const { Vector u = *this; u *= c; return u; }
-    Vector& operator/=(double const c) { x /= c; y /= c; return *this; }
-    Vector operator/(double const& c) const { Vector u = *this; u /= c; return u; }
+    Vector& operator*=(T const c) { x *= c; y *= c; return *this; }
+    Vector operator*(T const& c) const { Vector u = *this; u *= c; return u; }
+    Vector& operator/=(T const c) { x /= c; y /= c; return *this; }
+    Vector operator/(T const& c) const { Vector u = *this; u /= c; return u; }
     bool operator==(Vector const& v) const { return std::abs(x - v.x) < EPS && std::abs(y - v.y) < EPS; }
     bool operator!=(Vector const& v) const { return !(*this == v); }
-    double operator*(Vector const& v) const { return x*v.x + y*v.y; }
+    T operator*(Vector const& v) const { return x*v.x + y*v.y; }
 
-    double length2() const {
+    T length2() const {
         return sq(x) + sq(y);
     }
 
@@ -49,108 +53,133 @@ public:
         return acos(*this * v / length() / v.length());
     }
 
-    double x, y;
+    T x, y;
 };
 
+template <>
+bool Vector<long long>::operator==(Vector<long long> const& v) const {
+    return x == v.x && y == v.y; 
+}
+
+template <>
+void Vector<long long>::normalize() {
+    long long g = std::gcd(x, y);
+    x /= g;
+    y /= g;
+}
+
+template <class T>
 class Point {
 public:
-    Point(double x, double y) : x(x), y(y) {}
+    Point(T x, T y) : x(x), y(y) {}
 
-    Point& operator+=(Vector const& v) { x += v.x; y += v.y; return *this; }
-    Point operator+(Vector const& v) const { Point p = *this; p += v; return p; }
-    Point& operator-=(Vector const& v) { x -= v.x; y -= v.y; return *this; }
-    Point operator-(Vector const& v) const { Point p = *this; p -= v; return p; }
-    Vector operator-(Point const& p) const { return {x - p.x, y - p.y}; }
+    Point& operator+=(Vector<T> const& v) { x += v.x; y += v.y; return *this; }
+    Point operator+(Vector<T> const& v) const { Point p = *this; p += v; return p; }
+    Point& operator-=(Vector<T> const& v) { x -= v.x; y -= v.y; return *this; }
+    Point operator-(Vector<T> const& v) const { Point p = *this; p -= v; return p; }
+    Vector<T> operator-(Point const& p) const { return {x - p.x, y - p.y}; }
     bool operator==(Point const& p) { return std::abs(x - p.x) < EPS && std::abs(y - p.y) < EPS; }
     bool operator!=(Point const& p) { return !(*this == p); }
 
-    double x, y;
+    T x, y;
 };
 
+template <>
+bool Point<long long>::operator==(Point const& p) {
+    return x == p.x && y == p.y;
+}
+
+template <class T>
 class Line {
 public:
     // ax + by + c = 0
-    Line(double a, double b, double c) : a(a), b(b), c(c) {}
+    Line(T a, T b, T c) : a(a), b(b), c(c) {}
     // y = kx + d
-    Line(double k, double d) : a(k), b(-1), c(d) {}
+    Line(T k, T d) : a(k), b(-1), c(d) {}
     // point, point
-    Line(Point p, Point q) {
-        double x_diff = q.x - p.x;
-        if (std::abs(x_diff) < EPS) {
-            a = 1;
-            b = 0;
-            c = -q.x;
-        } else {
-            a = q.y - p.y;
-            b = p.x - q.x;
-            c = p.y * q.x - p.x * q.y;
-        }
-    }
+    Line(Point<T> p, Point<T> q) 
+        : a(q.y - p.y), 
+          b(p.x - q.x),
+          c(p.y * q.x - p.x * q.y) {}
     // point + vector
-    Line(Point p, Vector v) {
-        a = -v.y;
-        b = v.x;
-        c = p.x*v.y - p.y*v.x;
-    }
+    Line(Point<T> p, Vector<T> v) :
+        a(-v.y), 
+        b(v.x), 
+        c(p.x*v.y - p.y*v.x) {}
 
     bool parallel(Line const& other) const {
         return std::abs(det(a, b, other.a, other.b)) < EPS;
     }
 
-    Point intersect(Line const& other) const {
+    Point<T> intersect(Line const& other) const {
         double d = det(a, b, other.a, other.b);
         double x = -det(c, b, other.c, other.b) / d;
         double y = -det(a, c, other.a, other.c) / d;
         return {x, y};
     }
 
-    double distance(Point const& p) const {
-        return std::abs(a*p.x + b*p.y + c) / Vector(a, b).length();
+    double distance(Point<T> const& p) const {
+        return std::abs(a*p.x + b*p.y + c) / Vector<T>(a, b).length();
     }
 
-    double a, b, c;
+    bool contains(Point<T> const& p) const {
+        return std::abs(a*p.x + b*p.y + c) < EPS;
+    }
+
+    T a, b, c;
 };
 
+template <>
+bool Line<long long>::parallel(Line<long long> const& other) const {
+    return det(a, b, other.a, other.b) == 0;
+}
+
+template <>
+bool Line<long long>::contains(Point<long long> const& p) const {
+    return a*p.x + b*p.y + c == 0;
+}
+
+template <class T>
 class Circle {
 public:
-    Circle(Point m, double r) : m(m), r(r) {}
-    Circle(double r) : m({0, 0}), r(r) {}
+    Circle(Point<T> m, T r) : m(m), r(r) {}
+    Circle(T r) : m({0, 0}), r(r) {}
 
-    bool inside(Point p) {
+    bool inside(Point<T> p) {
         return (p - m).length2() < r*r;
     }
 
-    std::vector<Point> intersect(Line line) {
-        std::vector<Point> intersections;
-        double a = line.a;
-        double b = line.b;
-        double c = a*m.x + b*m.y + line.c;
+    std::vector<Point<T>> intersect(Line<T> line) {
+        std::vector<Point<T>> intersections;
+        T a = line.a;
+        T b = line.b;
+        T c = a*m.x + b*m.y + line.c;
         double d2 = sq(a) + sq(b);
-        Point closest(-a*c/d2, -b*c/d2);
+        Point<T> closest(-a*c/d2, -b*c/d2);
 
-        double diff = sq(r)*d2 - sq(c);
+        T diff = sq(r)*d2 - sq(c);
         if (diff > EPS) {
             double d = sq(r) - sq(c)/d2;
             double factor = sqrt(d / d2);
-            intersections.push_back(closest + Vector{b, -a} * factor);
-            intersections.push_back(closest + Vector{-b, a} * factor);
+            intersections.push_back(closest + Vector<T>{b, -a} * factor);
+            intersections.push_back(closest + Vector<T>{-b, a} * factor);
         } else if (std::abs(diff) <= EPS) {
             intersections.push_back(closest);
         }
 
         for (auto& p : intersections)
-            p += Vector{m.x, m.y};
+            p += Vector<T>{m.x, m.y};
         return intersections;
     }
 
-    std::vector<Point> intersect(Circle other) {
-        Line line(2*(other.m.x - m.x), 
+    std::vector<Point<T>> intersect(Circle other) {
+        Line<T> line(2*(other.m.x - m.x), 
                   2*(other.m.y - m.y), 
                   sq(other.r) - sq(r) + sq(m.x) + sq(m.y)
                   - sq(other.m.x) - sq(other.m.y));
         return intersect(line);
     }
 
-    Point m;
-    double r;
+    Point<T> m;
+    T r;
 };
