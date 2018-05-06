@@ -17,7 +17,7 @@ T sq(T x) {
 template <class T>
 class Vector {
 public:
-    Vector(T x, T y) : x(x), y(y) {}
+    Vector(T x=0, T y=0) : x(x), y(y) {}
 
     Vector& operator+=(Vector const& v) { x += v.x; y += v.y; return *this; }
     Vector operator+(Vector const& v) const { Vector u = *this; u += v; return u; }
@@ -71,7 +71,7 @@ void Vector<long long>::normalize() {
 template <class T>
 class Point {
 public:
-    Point(T x, T y) : x(x), y(y) {}
+    Point(T x=0, T y=0) : x(x), y(y) {}
 
     Point& operator+=(Vector<T> const& v) { x += v.x; y += v.y; return *this; }
     Point operator+(Vector<T> const& v) const { Point p = *this; p += v; return p; }
