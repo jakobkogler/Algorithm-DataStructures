@@ -18,6 +18,16 @@ std::vector<T> operator*(std::vector<T> const& v, Matrix<T> const& M) {
 }
 
 template <typename T>
+std::vector<T> operator*(Matrix<T> const& M, std::vector<T> const& v) {
+    std::vector<T> res(M.size(), 0);
+    for (int i = 0; i < (int)res.size(); i++) {
+        for (int j = 0; j < (int)v.size(); j++)
+            res[i] += M[i][j] * v[j];
+    }
+    return res;
+}
+
+template <typename T>
 Matrix<T> operator*(Matrix<T> const& A, Matrix<T> const& B) {
     auto res = A;
     for (int i = 0; i < (int)res.size(); i++)
