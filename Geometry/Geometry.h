@@ -51,7 +51,13 @@ public:
     }
 
     double angle(Vector const& v) const {
-        return acos(*this * v / length() / v.length());
+        double angle = v.atan2_angle() - atan2_angle();
+        const double PI = acos(-1);
+        if (angle > PI)
+            angle -= PI;
+        if (angle <= -PI)
+            angle += PI;
+        return angle;
     }
 
     T x, y;
