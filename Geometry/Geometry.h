@@ -30,6 +30,7 @@ public:
     bool operator==(Vector const& v) const { return std::abs(x - v.x) < EPS && std::abs(y - v.y) < EPS; }
     bool operator!=(Vector const& v) const { return !(*this == v); }
     T operator*(Vector const& v) const { return x*v.x + y*v.y; }
+    T operator[](int idx) const { return idx ? y : x; }
 
     T length2() const {
         return sq(x) + sq(y);
