@@ -2,6 +2,20 @@
 #include <complex>
 #include <algorithm>
 
+template <typename T>
+void transpose(std::vector<std::vector<T>> & M) {
+    auto tmp = M;
+    M.resize(tmp[0].size());
+    for (auto& row : M)
+        row.resize(tmp.size());
+
+    for (int i = 0; i < (int)M.size(); i++) {
+        for (int j = 0; j < (int)M[0].size(); j++) {
+            M[i][j] = tmp[j][i];
+        }
+    }
+}
+
 class FFT {
 public:
     FFT(int max_degree) {
@@ -9,7 +23,6 @@ public:
         reverse.resize(lg + 1);
 
         int size = 1 << lg;
-        const double PI = acos(-1);
         ws.resize(lg);
         ws[lg-1].resize(size >> 1);
         for (int i = 0; i < (size >> 1); i++) {
@@ -42,6 +55,7 @@ public:
 
     using cd = std::complex<double>;
     using vcd = std::vector<cd>;
+    using vvcd = std::vector<vcd>;
 
     void fft(vcd & a, bool inv) {
         int lg = get_lg(a.size());
@@ -85,13 +99,8 @@ public:
         return result;
     }
 
-    template <typename T>
-    std::vector<long long> multiply(std::vector<T> const& a, std::vector<T> const& b) {
-        int result_size = a.size() + b.size() - 1;
-        if (result_size <= 200)
-            return multiply_brute_force(a, b, result_size);
-
-        vcd fa(a.begin(), a.end()), fb(b.begin(), b.end());
+    void multiply(vcd & fa, vcd & fb) {
+        int result_size = fa.size() + fb.size() - 1;
         int size = 1 << get_lg(result_size);
         fa.resize(size);
         fb.resize(size);
@@ -102,10 +111,57 @@ public:
             fa[i] *= fb[i];
         fft(fa, true);
 
+        fa.resize(result_size);
+    }
+
+    template <typename T>
+    std::vector<long long> multiply(std::vector<T> const& a, std::vector<T> const& b) {
+        int result_size = a.size() + b.size() - 1;
+        if (result_size <= 200)
+            return multiply_brute_force(a, b, result_size);
+
+        vcd fa(a.begin(), a.end()), fb(b.begin(), b.end());
+        multiply(fa, fb);
+
         std::vector<long long> result(result_size);
         for (int i = 0; i < result_size; i++)
             result[i] = std::llround(fa[i].real());
         return result;
+    }
+
+    void fft2D(vvcd & a, bool inv) {
+        for (auto& row : a)
+            fft(row, inv);
+        transpose(a);
+        for (auto& row : a)
+            fft(row, inv);
+        transpose(a);
+    }
+
+    void multiply2D(vvcd & a, vvcd & b) {
+        int result_r = a.size() + b.size() - 1;
+        int result_c = a[0].size() + b[0].size() - 1;
+        int size_r = 1 << get_lg(result_r);
+        int size_c = 1 << get_lg(result_c);
+        a.resize(size_r);
+        b.resize(size_r);
+        for (auto& row : a)
+            row.resize(size_c);
+        for (auto& row : b)
+            row.resize(size_c);
+
+        fft2D(a, false);
+        fft2D(b, false);
+        for (int i = 0; i < size_r; i++) {
+            for (int j = 0; j < size_c; j++) {
+                a[i][j] *= b[i][j];
+            }
+        }
+        fft2D(a, true);
+
+        a.resize(result_r);
+        for (auto& row : a)
+            row.resize(result_c);
     }
 
     std::vector<int> multiply_mod(std::vector<int> const& a, std::vector<int> const& b, int const mod) {
@@ -146,4 +202,5 @@ public:
 private:
     std::vector<std::vector<int>> reverse;
     std::vector<vcd> ws;
+    const double PI = std::acos(-1);
 };
