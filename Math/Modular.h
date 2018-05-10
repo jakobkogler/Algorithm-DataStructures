@@ -81,6 +81,7 @@ public:
     }
 
     int value;
+    static const int MOD_value = MOD;
 };
 
 using ModInt = Modular<1'000'000'007>;
