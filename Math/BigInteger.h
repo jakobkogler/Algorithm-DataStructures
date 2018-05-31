@@ -1,178 +1,386 @@
-#include <array>
-#include <cstdint>
-#include <iostream>
+#include <complex>
 #include <vector>
 #include <algorithm>
 
-template <int BITS>
-class BigInteger
-{
+constexpr int power(int x, int e) {
+    return e ? x * power(x, e-1) : 1;
+}
+
+class FFT {
 public:
-    BigInteger(long long value) {
-        bool negative = value < 0;
-        value = std::abs(value);
-        for (int i = 0; i < BLOCK_CNT; i++) {
-            blocks[i] = value & MASK_USED_BITS;
-            value >>= BITS_PER_BLOCK;
-        }
-        if (negative) two_complement(*this);
+    using cd = std::complex<double>;
+    using vcd = std::vector<cd>;
+    using vvcd = std::vector<vcd>;
+
+    static int get_lg(int x) {
+        return x ? 32 - __builtin_clz(x - 1) : 0;
     }
 
-    int sign() const {
-        if (blocks.back() >> (BITS_PER_BLOCK - 1)) return -1;
-        for (auto const& block : blocks) {
-            if (block > 0u) return 1;
-        }
-        return 0;
-    }
-    static int cmp(BigInteger const& a, BigInteger const& b) { return (a - b).sign(); } 
-    friend bool operator==(BigInteger const& a, BigInteger const& b) { return cmp(a , b) == 0; }
-    friend bool operator!=(BigInteger const& a, BigInteger const& b) { return cmp(a , b) != 0; }
-    friend bool operator<(BigInteger const& a, BigInteger const& b) { return cmp(a , b) < 0; }
-    friend bool operator<=(BigInteger const& a, BigInteger const& b) { return cmp(a , b) <= 0; }
-    friend bool operator>(BigInteger const& a, BigInteger const& b) { return cmp(a , b) > 0; }
-    friend bool operator>=(BigInteger const& a, BigInteger const& b) { return cmp(a , b) >= 0; }
+    static void precompute(int lg) {
+        int size = 1 << lg;
 
-    void operator+=(BigInteger const& b) { add(b); }
-    friend BigInteger operator+(BigInteger const& a, BigInteger const& b) {
-        BigInteger res = a;
-        res += b;
-        return res;
-    }
-    void operator-=(BigInteger const& b) { add(two_complement(b)); }
-    friend BigInteger operator-(BigInteger const& a, BigInteger const& b) {
-        return a + two_complement(b);
-    }
-    void operator<<=(int shift_cnt) {
-        int block_shift_cnt = shift_cnt / BITS_PER_BLOCK;
-        int single_shift_cnt = shift_cnt % BITS_PER_BLOCK;
-        for (int i = BLOCK_CNT - 1; i >= 0; i--) {
-            blocks[i] = i >= block_shift_cnt ? blocks[i - block_shift_cnt] : 0u;
+        if ((int)reverse.size() <= lg) {
+            reverse.resize(lg + 1);
+            ws.resize(lg + 1);
         }
-        for (int i = 0; i < single_shift_cnt; i++) {
-            shift_left();
-        }
-    }
-    friend BigInteger operator<<(BigInteger const& a, int shift_cnt) {
-        BigInteger res = a;
-        res <<= shift_cnt;
-        return res;
-    }
-    friend BigInteger operator*(BigInteger const& a, BigInteger const& b) {
-        BigInteger result = 0;
-        for (int i = 0; i < BLOCK_CNT; i++) {
-            BigInteger sum = 0;
-            for (int j = 0; j <= i; j++) {
-                sum += (uint64_t)a.blocks[j] * b.blocks[i - j];
+
+        if (reverse[lg].empty()) {
+            reverse[lg].assign(size, 0);
+            for (int i = 1, j = 0; i < size; i++) {
+                int bit = size >> 1;
+                for (; j & bit; bit >>= 1)
+                    j ^= bit;
+                j ^= bit;
+                reverse[lg][i] = j;
             }
-            result += sum << (i * BITS_PER_BLOCK);
+        }
+
+        if (ws[lg-1].empty()) {
+            ws[lg-1].resize(size >> 1);
+            for (int i = 0; i < (size >> 1); i++) {
+                double ang = 2 * PI * i / size;
+                ws[lg-1][i] = {cos(ang), sin(ang)};
+            }
+            for (int j = lg - 2; j >= 0 && ws[j].empty(); j--) {
+                int sz_level = ws[j+1].size() >> 1;
+                ws[j].resize(sz_level);
+                for (int i = 0; i < sz_level; i++)
+                    ws[j][i] = ws[j+1][i<<1];
+            }
+        }
+    }
+
+    static void fft(vcd & a, bool inv) {
+        int lg = get_lg(a.size());
+        int size = 1 << lg;
+        precompute(lg);
+
+        auto& rev = reverse[lg];
+        for (int i = 0; i < size; i++) {
+            if (i < rev[i])
+                swap(a[i], a[rev[i]]);
+        }
+
+        for (int k = 0; k < lg; k++) {
+            int len = 1 << k;
+            auto& w = ws[k];
+            for (int i = 0; i < size; i += 2*len) {
+                for (int j = 0; j < len; j++) {
+                    cd u = a[i+j], v = a[i+j+len] * w[j];
+                    a[i+j] = u + v;
+                    a[i+j+len] = u - v;
+                }
+            }
+        }
+
+        if (inv) {
+            for (cd & x : a)
+                x /= size;
+            std::reverse(a.begin() + 1, a.end());
+        }
+    }
+
+    static void multiply(vcd & fa, vcd & fb) {
+        int result_size = fa.size() + fb.size() + 1;
+        int size = 1 << get_lg(result_size);
+        fa.resize(size);
+        fb.resize(size);
+
+        fft(fa, false);
+        fft(fb, false);
+        for (int i = 0; i < size; i++)
+            fa[i] *= fb[i];
+        fft(fa, true);
+
+        fa.resize(result_size);
+    }
+
+    static std::vector<long long> multiply_brute_force(std::vector<int> const& a, std::vector<int> const& b) {
+        std::vector<long long> result(a.size() + b.size() + 1, 0);
+        for (auto i = 0u; i < a.size(); i++) {
+            for (auto j = 0u; j < b.size(); j++) {
+                result[i + j] += a[i] * b[j];
+            }
         }
         return result;
     }
-    void operator*=(BigInteger const& b) {
-        *this = *this * b;
-    }
 
-    friend std::ostream& operator<<(std::ostream& os, BigInteger num) {
-        if (num == 0) {
-            return os << 0;
-        }
-        if (num < 0) {
-            os << '-';
-            two_complement(num);
-        }
-        std::vector<int> digits;
-        while (num > 0) {
-            auto div_mod = divmod(num, 10);
-            auto& digit = div_mod.second;
-            digits.push_back(digit.blocks[0]);
-            num = div_mod.first;
-        }
-        std::reverse(digits.begin(), digits.end());
-        for (auto digit : digits) {
-            os << digit;
-        }
-        return os;
-    }
-
-    friend BigInteger power(BigInteger base, int e)
-    {
-        BigInteger result = 1;
-        while (e) {
-            if (e & 1)
-                result = result * base;
-            base = base * base;
-            e >>= 1;
+    static std::vector<long long> multiply(std::vector<int> const& a, std::vector<int> const& b) {
+        std::vector<long long> result;
+        int result_size = a.size() + b.size() + 1;
+        if (result_size <= 0) {
+            result = multiply_brute_force(a, b);
+        } else {
+            vcd fa(a.begin(), a.end()), fb(b.begin(), b.end());
+            multiply(fa, fb);
+            result.resize(result_size);
+            for (int i = 0; i < result_size; i++)
+                result[i] = std::llround(fa[i].real());
         }
         return result;
     }
 
 private:
-    static int const BITS_PER_BLOCK = 31;
-    static int const BLOCK_CNT = (BITS + BITS_PER_BLOCK - 1u) / BITS_PER_BLOCK;
-    using BlockType = uint32_t;
-    using Blocks = std::array<BlockType, BLOCK_CNT>;
-    static BlockType const BLOCK_BASE = 1u << BITS_PER_BLOCK;
-    static BlockType const MASK_USED_BITS = (1u << BITS_PER_BLOCK) - 1u;
-    // static BlockType const MASK_OVERFLOW = 1 << (BITS_PER_BLOCK + 1);
-    
-    static void two_complement(BigInteger& num) {
-        for (auto& block : num.blocks) 
-            block ^= MASK_USED_BITS;
-        num += 1;
-    }
+    static std::vector<std::vector<int>> reverse;
+    static std::vector<vcd> ws;
+    static const double PI;
+};
 
-    static BigInteger two_complement(BigInteger const& num) {
-        auto res = num;
-        two_complement(res);
-        return res;
-    }
+std::vector<std::vector<int>> FFT::reverse;
+std::vector<FFT::vcd> FFT::ws;
+const double FFT::PI = std::acos(-1);
 
-    void add(BigInteger const& b) {
-        BlockType carry = 0;
-        for (int i = 0; i < BLOCK_CNT; i++) {
-            blocks[i] += b.blocks[i] + carry;
-            carry = blocks[i] >> BITS_PER_BLOCK;
-            blocks[i] &= MASK_USED_BITS;
+class BigInteger {
+public:
+    BigInteger(long long x = 0) {
+        if (x > 0)
+            sign = 1;
+        else if (x == 0)
+            sign = 0;
+        else
+            sign = -1;
+        x *= sign;
+
+        while (x) {
+            data.push_back(x % BASE);
+            x /= BASE;
         }
     }
 
-    void shift_right() {
-        for (int i = 0; i < BLOCK_CNT; i++) {
-            if (i) 
-                blocks[i - 1] += (blocks[i] & 1) << (BITS_PER_BLOCK - 1);
-            blocks[i] >>= 1;
-        }
-    }
+    BigInteger& add(BigInteger const& o, int o_sign) {
+        if (sign == o_sign) {
+            data.resize(std::max(data.size(), o.data.size()) + 1, 0);
+            int carry = 0;
+            for (auto i = 0u; i < data.size(); i++) {
+                if (i < o.data.size())
+                    carry += o.data[i];
+                carry += data[i];
 
-    void shift_left() {
-        for (int i = BLOCK_CNT - 1; i >= 0; i--) {
-            blocks[i] <<= 1;
-            blocks[i] &= MASK_USED_BITS;
-            if (i) 
-                blocks[i] += blocks[i - 1] >> (BITS_PER_BLOCK - 1);
-        }
-    }
+                data[i] = carry % BASE;
+                carry /= BASE;
+            }
+        } else if (o_sign == 0) {
+            // nothing
+        } else if (sign == 0) {
+            sign = o_sign;
+            data = o.data;
+        } else {
+            int cmp = compare_abs(o);
+            data.resize(std::max(data.size(), o.data.size()) + 1, 0);
+            if (cmp == 0) {
+                sign = 0;
+                data.clear();
+            } else if (cmp == 1) {
+                int carry = 0;
+                for (auto i = 0u; i < data.size(); i++) {
+                    carry += data[i];
+                    if (i < o.data.size())
+                        carry -= o.data[i];
 
-    static std::pair<BigInteger, BigInteger> divmod(BigInteger a, BigInteger b) {
-        // assuming both are positive
-        int cnt = 0;
-        while (b <= a) {
-            b.shift_left();
-            cnt++;
-        }
-        
-        BigInteger result = 0;
-        for (int i = 0; i < cnt; i++) {
-            b.shift_right();
-            result.shift_left();
-            if (a >= b) {
-                result.blocks[0] += 1u;
-                a -= b;
+                    if (carry < 0) {
+                        carry += BASE;
+                        data[i] = carry;
+                        carry = 1;
+                    } else {
+                        data[i] = carry;
+                        carry = 0;
+                    }
+                }
+            } else {
+                int carry = 0;
+                for (auto i = 0u; i < data.size(); i++) {
+                    if (i < o.data.size())
+                        carry += o.data[i];
+                    carry -= data[i];
+
+                    if (carry < 0) {
+                        carry += BASE;
+                        data[i] = carry;
+                        carry = 1;
+                    } else {
+                        data[i] = carry;
+                        carry = 0;
+                    }
+                }
+                sign = o_sign;
             }
         }
-        return {result, a};
+
+        pop_zeros();
+        return *this;
     }
 
-    Blocks blocks; // stored in 2-complement form
+    BigInteger& operator+=(BigInteger const& o) {
+        return add(o, o.sign);
+    }
+
+    BigInteger operator+(BigInteger const& o) const {
+        BigInteger t = *this;
+        t += o;
+        return t;
+    }
+
+    BigInteger& operator-=(BigInteger const& o) {
+        if (o.sign)
+            return add(o, -o.sign);
+        return *this;
+    }
+
+    BigInteger operator-(BigInteger const& o) const {
+        BigInteger t = *this;
+        t -= o;
+        return t;
+    }
+
+    BigInteger& operator*=(int o) {
+        if (o == 0) {
+            sign = 0;
+            data.clear();
+        } else {
+            if (o < 0) {
+                sign *= -1;
+                o = std::abs(o);
+            }
+            int n = data.size();
+            data.resize(n + 9, 0);
+            long long carry = 0;
+            for (int i = 0; i < n || carry; i++) {
+                carry += (long long)data[i] * o;
+                data[i] = carry % BASE;
+                carry /= BASE;
+            }
+            pop_zeros();
+        }
+        return *this;
+    }
+
+    BigInteger operator*(int o) const {
+        BigInteger t = *this;
+        t += o;
+        return t;
+    }
+
+    BigInteger& operator*=(BigInteger const& o) {
+        sign *= o.sign;
+        if (sign == 0) {
+            data.clear();
+        } else {
+            auto result = FFT::multiply(data, o.data);
+            data.resize(result.size());
+            long long carry = 0;
+            for (auto i = 0u; i < result.size(); i++) {
+                carry += result[i];
+                data[i] = carry % BASE;
+                carry /= BASE;
+            }
+            pop_zeros();
+        }
+        return *this;
+    }
+
+    BigInteger operator*(BigInteger const& o) const {
+        BigInteger t = *this;
+        t += o;
+        return t;
+    }
+
+    void pop_zeros() {
+        while (!data.empty() && data.back() == 0)
+            data.pop_back();
+    }
+
+    friend std::ostream& operator<<(std::ostream &stream, BigInteger const& b) {
+        if (b.data.empty()) {
+            stream << 0;
+        } else {
+            if (b.sign == -1)
+                stream << '-';
+            stream << b.data.back();
+            for (int i = b.data.size() - 2; i >= 0; i--) {
+                stream.width(DIGITS);
+                stream.fill('0');
+                stream << b.data[i];
+            }
+        }
+        return stream;
+    }
+
+    friend std::istream& operator>>(std::istream& is, BigInteger& b) {
+        std::string s;
+        is >> s;
+        int start = 0;
+        if (s == "0") {
+            b.sign = 0;
+            b.data.clear();
+        } else {
+            if (s[0] == '-') {
+                b.sign = -1;
+                start++;
+            } else {
+                b.sign = 1;
+            }
+            b.data.resize((s.size() - start + DIGITS - 1) / DIGITS);
+            for (int i = 0, idx = s.size() - 1; i < (int)b.data.size(); i++, idx -= DIGITS) {
+                int value = 0;
+                for (int j = std::max(start, idx - DIGITS + 1); j <= idx; j++)
+                    value = value * 10 + s[j] - '0';
+                b.data[i] = value;
+            }
+        }
+        return is;
+    }
+          
+    unsigned int digits() const {
+        if (data.empty())
+            return 0;
+        unsigned int d = (data.size() - 1) * DIGITS;
+        int x = data.back();
+        while (x > 0) {
+            d++;
+            x /= 10;
+        }
+        return d;
+    }
+
+    int compare_abs(BigInteger const& o) const {
+        if (data.size() != o.data.size())
+            return data.size() < o.data.size() ? -1 : 1;
+        for (int i = data.size() - 1; i >= 0; i--) {
+            if (data[i] != o.data[i])
+                return data[i] < o.data[i] ? -1 : 1;
+        }
+        return 0;
+    }
+    int compare(BigInteger const& o) const {
+        if (sign < o.sign)
+            return -1;
+        if (sign > o.sign)
+            return 1;
+        int abs = compare_abs(o);
+        return (abs != 0 && sign == -1) ? -abs : abs;
+    }
+    bool operator==(BigInteger const& o) const { return compare(o) == 0; }
+    bool operator!=(BigInteger const& o) const { return compare(o) != 0; }
+    bool operator<(BigInteger const& o) const { return compare(o) == -1; }
+    bool operator<=(BigInteger const& o) const { return compare(o) <= 0; }
+    bool operator>(BigInteger const& o) const { return compare(o) == 1; }
+    bool operator>=(BigInteger const& o) const { return compare(o) >= 0; }
+
+private:
+    static const int DIGITS = 4;
+    static const int BASE = power(10, DIGITS);
+
+    int sign;
+    std::vector<int> data;
 };
+
+BigInteger power(BigInteger base, int e) {
+    BigInteger result = 1;
+    while (e) {
+        if (e & 1)
+            result *= base;
+        base *= base;
+        e >>= 1;
+    }
+    return result;
+}
