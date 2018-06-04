@@ -292,6 +292,23 @@ public:
         return t;
     }
 
+    BigInteger& operator/=(int d) {
+        long long remainder = 0;
+        for (int i = data.size() - 1; i >= 0; i--) {
+            remainder = BASE * remainder + data[i];
+            data[i] = remainder / d;
+            remainder %= d;
+        }
+        pop_zeros();
+        return *this;
+    }
+
+    BigInteger operator/(int d) {
+        BigInteger b = *this;
+        b /= d;
+        return b;
+    }
+
     void pop_zeros() {
         while (!data.empty() && data.back() == 0)
             data.pop_back();
