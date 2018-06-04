@@ -232,6 +232,14 @@ public:
         return t;
     }
 
+    BigInteger& operator*=(long long o) {
+        return *this *= BigInteger(o);
+    }
+
+    BigInteger operator*(long long o) {
+        return *this * BigInteger(o);
+    }
+
     BigInteger& operator*=(int o) {
         if (o == 0) {
             sign = 0;
@@ -256,7 +264,7 @@ public:
 
     BigInteger operator*(int o) const {
         BigInteger t = *this;
-        t += o;
+        t *= o;
         return t;
     }
 
@@ -280,7 +288,7 @@ public:
 
     BigInteger operator*(BigInteger const& o) const {
         BigInteger t = *this;
-        t += o;
+        t *= o;
         return t;
     }
 
