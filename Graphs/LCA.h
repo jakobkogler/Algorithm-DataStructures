@@ -3,10 +3,15 @@
 class LCA
 {
 public:
-    LCA(std::vector<std::vector<int>> adj, int nodes) : adj(adj) {
+    LCA(std::vector<std::vector<int>> adj) : adj(adj) {
+        int nodes = adj.size();
         first_encounter.resize(nodes);
         dfs_euler_tour(0, -1);
         st = new SparseTable(euler_tour);
+    }
+
+    ~LCA() {
+        delete st;
     }
 
     int query(int u, int v) {
