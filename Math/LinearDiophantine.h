@@ -1,4 +1,14 @@
 template <typename T>
+T floor_div(T a, long long b) {
+    return (a < 0 ? a - (b - 1) : a) / b;
+}
+
+template <typename T>
+T ceil_div(T a, long long b) {
+    return (a >= 0 ? a + (b - 1) : a) / b;
+}
+
+template <typename T>
 class LinearDiophantine {
 public:
     static T extended_gcd(T a, T b, T& x, T& y) {
@@ -42,6 +52,26 @@ public:
                 return c % g == 0;
             }
         }
+    }
+
+    static void smallest_non_negative_x(T a, T b, T& x, T& y, T g) {
+        long long k;
+        if (b >= 0)
+           k = ceil_div(-x, b / g);
+        else
+           k = floor_div(x, -b / g);
+        x += k * (b / g);
+        y -= k * (a / g);
+    }
+
+    static void smallest_non_negative_y(T a, T b, T& x, T& y, T g) {
+        long long k;
+        if (a >= 0)
+           k = ceil_div(-y, a / g);
+        else
+           k = floor_div(y, -a / g);
+        x += k * (b / g);
+        y -= k * (a / g);
     }
 
     static T multiply_mod(T x, T y, T m) {
