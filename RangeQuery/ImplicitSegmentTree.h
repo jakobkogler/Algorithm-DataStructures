@@ -1,4 +1,20 @@
 #include <algorithm>
+#include <deque>
+
+class Node;
+
+std::deque<Node> cache;
+
+Node* fetch_new() {
+    cache.emplace_back();
+    return &cache.back();
+}
+
+Node* fetch_new(Node const& node) {
+    cache.emplace_back(node);
+    return &cache.back();
+}
+
 
 class Node {
 public:
@@ -11,11 +27,11 @@ public:
             int m = (l + r) / 2;
             if (pos < m) {
                 if (left == nullptr)
-                    left = new Node(0);
+                    left = fetch_new(Node(0));
                 left->update(l, m, pos, val);
             } else {
                 if (right == nullptr)
-                    right = new Node(0);
+                    right = fetch_new(Node(0));
                 right->update(m, r, pos, val);
             }
             x = 0;
@@ -47,7 +63,7 @@ public:
 
 class ImplicitSegmentTree {
 public:
-    ImplicitSegmentTree(int n) : n(n), root(new Node(0)) {}
+    ImplicitSegmentTree(int n) : n(n), root(fetch_new(Node(0))) {}
 
     void update(int pos, int val) {
         root->update(0, n, pos, val);
