@@ -60,6 +60,10 @@ public:
         return a -= b;
     }
 
+    friend Modular operator-(Modular const a) {
+        return 0 - a;
+    }
+
     friend Modular operator*(Modular a, Modular const b) {
         return a *= b;
     }
