@@ -1,6 +1,7 @@
 #include <cmath>
 #include <vector>
 #include <numeric>
+#include <iostream>
 
 constexpr double EPS = 1e-9;
 
@@ -86,7 +87,10 @@ public:
     Point operator-(Vector<T> const& v) const { Point p = *this; p -= v; return p; }
     Vector<T> operator-(Point const& p) const { return {x - p.x, y - p.y}; }
     bool operator==(Point const& p) { return std::abs(x - p.x) < EPS && std::abs(y - p.y) < EPS; }
-    bool operator!=(Point const& p) { return !(*this == p); }
+    bool operator!=(Point const& p) const { return !(*this == p); }
+    bool operator<(Point const& p) const { return x < p.x || (x == p.x && y < p.y); }
+    friend std::istream& operator>>(std::istream& is, Point<T>& pt) { return is >> pt.x >> pt.y; }
+    friend std::ostream& operator<<(std::ostream& os, Point<T> const& pt) { return os << pt.x << " " << pt.y; }
 
     T x, y;
 };
@@ -129,7 +133,7 @@ public:
         return std::abs(a*p.x + b*p.y + c) / Vector<T>(a, b).length();
     }
 
-    bool contains(Point<T> const& p) const {
+    virtual bool contains(Point<T> const& p) const {
         return std::abs(a*p.x + b*p.y + c) < EPS;
     }
 
@@ -145,6 +149,24 @@ template <>
 bool Line<long long>::contains(Point<long long> const& p) const {
     return a*p.x + b*p.y + c == 0;
 }
+
+template <class T>
+class Segment : public Line<T> {
+public:
+    Segment(Point<T> p, Point<T> q) : Line<T>(p, q), p(p), q(q) {}
+
+    bool between_1d(T const x, T const b1, T const b2) const {
+        return min(b1, b2) <= x && x <= max(b1, b2);
+    }
+
+    bool contains(Point<T> const& pt) const override {
+        if (!between_1d(pt.x, p.x, q.x) || !between_1d(pt.y, p.y, q.y))
+            return false;
+        return Line<T>::contains(pt);
+    }
+
+    Point<T> p, q;
+};
 
 template <class T>
 class Circle {
