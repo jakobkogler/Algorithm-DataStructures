@@ -30,7 +30,7 @@ public:
 	}
 
 	int prefix_query(int idx) const {
-		// Computes prefix sum of up to including the idx-th element
+		// Computes prefix sum of up to the element at index idx
 		int result = 0;
 		for (++idx; idx > 0; idx -= idx & -idx) {
 			result += m_array[idx];
@@ -40,11 +40,14 @@ public:
 
 	int range_query(int from_idx, int to_idx) const {
 		// Computes the range sum between two indices (both inclusive)
-		return prefix_query(to_idx) - prefix_query(from_idx - 1);
+        if (from_idx == 0)
+            return prefix_query(to_idx);
+        else
+            return prefix_query(to_idx) - prefix_query(from_idx - 1);
 	}
 
 	void update(int idx, int add) {
-		// Add a value to the elent at index idx
+		// Add a value to the element at index idx
 		for (++idx; idx < m_array.size(); idx += idx & -idx) {
 			m_array[idx] += add;
 		}
