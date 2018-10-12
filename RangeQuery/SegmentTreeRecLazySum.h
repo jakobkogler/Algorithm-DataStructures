@@ -54,14 +54,14 @@ public:
 
         if (x >= r || y <= l) {
         } else if (x <= l && r <= y) {
-            data[id] += addend;
+            data[id] += addend * (r - l);
             todo[id] += addend;
         } else {
             push(id, l, r);
             int m = (l + r) >> 1;
             add(x, y, addend, id << 1, l, m);
             add(x, y, addend, id << 1 | 1, m, r);
-            data[id] = std::min(data[id << 1], data[id << 1 | 1]);
+            data[id] = data[id << 1] + data[id << 1 | 1];
         }
     }
 
