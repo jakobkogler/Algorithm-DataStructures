@@ -1,37 +1,40 @@
 #include <vector>
 #include <math.h>
 
-std::vector<int> compute_primes(int n)
-{
-    std::vector<bool> m(n + 1, false);
+std::vector<int> compute_primes(int n) {
+    const int S = 30000;
+    int nsqrt = std::round(std::sqrt(n));
 
-    int root = std::sqrt(n) + 1;
-    for (int i = 1; i <= root; i++) {
-        for (int j = 1; j <= root; j++) {
-            int a = 4 * i * i + j * j;
-            int b = 3 * i * i + j * j;
-            int c = 3 * i * i - j * j;
-
-            if (a <= n && (a % 12 == 1 || a % 12 == 5))
-                m[a].flip();
-            if (b <= n && b % 12 == 7)
-                m[b].flip();
-            if (i > j && c <= n && c % 12 == 11)
-                m[c].flip();
+    std::vector<char> is_prime(nsqrt + 1, true);
+    std::vector<int> primes, sieve_primes, start_indices;
+    for (int i = 3; i <= nsqrt; i += 2) {
+        if (is_prime[i]) {
+            sieve_primes.push_back(i);
+            start_indices.push_back((i * i - 1) / 2);
+            for (int j = i * i; j <= nsqrt; j += 2 * i)
+                is_prime[j] = false;
         }
     }
 
-    for (int i = 5; i * i <= n; i++) {
-        if (m[i]) {
-            for (int j = 1; j * i * i <= n; j++)
-                m[j * i * i] = false;
+    primes.push_back(2);
+    std::vector<char> block(S);
+    int high = (n - 1) / 2;
+    for (int low = 0; low <= high; low += S) {
+        fill(block.begin(), block.end(), true);
+        for (auto i = 0u; i < sieve_primes.size(); i++) {
+            int p = sieve_primes[i];
+            int idx = start_indices[i];
+            for (; idx < S; idx += p)
+                block[idx] = false;
+            start_indices[i] = idx - S;
         }
-    }
+        if (low == 0)
+            block[0] = false;
+        for (int i = 0; i < S && low + i <= high; i++) {
+            if (block[i])
+                primes.push_back((low + i) * 2 + 1);
+        }
+    };
 
-    std::vector<int> primes = {2, 3};
-    for (int i = 5; i < n; i++) {
-        if (m[i])
-            primes.push_back(i);
-    }
     return primes;
 }
