@@ -30,6 +30,7 @@ public:
     Vector operator/(T const& c) const { Vector u = *this; u /= c; return u; }
     bool operator==(Vector const& v) const { return std::abs(x - v.x) < EPS && std::abs(y - v.y) < EPS; }
     bool operator!=(Vector const& v) const { return !(*this == v); }
+    bool operator<(Vector const& v) const { return x < v.x || (x == v.x && y < v.y); }
     T operator*(Vector const& v) const { return x*v.x + y*v.y; }
     T operator[](int idx) const { return idx ? y : x; }
 
