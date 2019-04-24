@@ -42,6 +42,11 @@ public:
                     adj_condensation[component[v]].push_back(component[u]);
             }
         }
+        for (int v = 0; v < c; v++) {
+            auto& vec = adj_condensation[v];
+            sort(vec.begin(), vec.end());
+            vec.resize(unique(vec.begin(), vec.end()) - vec.begin());
+        }
 
         return c;
     }
