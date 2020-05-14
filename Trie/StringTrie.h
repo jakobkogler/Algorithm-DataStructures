@@ -2,12 +2,8 @@
 #include <array>
 
 struct Vertex {
-    std::array<int, 26> next;
+    std::array<int, 26> next{};
     bool terminal = false;
-
-    Vertex() {
-        std::fill(next.begin(), next.end(), 0);
-    }
 };
 
 class Trie {
