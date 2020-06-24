@@ -6,6 +6,8 @@ Implementations of common algorithms and data structures used for competitive pr
 
 The algorithms and data structures can easily be pasted into a document using the included Vim plugin.
 
+![demonstration](demonstration.gif)
+
 ### Installation
 
 Use [vim-plug](https://github.com/junegunn/vim-plug) or any Vim plugin manager of your choice.
