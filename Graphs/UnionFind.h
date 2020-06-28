@@ -13,13 +13,13 @@ public:
 
     int Find(int x) { return x == p[x] ? x : p[x] = Find(p[x]); }
 
-    void Union(int x, int y)
+    bool Union(int x, int y)
     {
         int xRoot = Find(x);
         int yRoot = Find(y);
 
         if (xRoot == yRoot)
-            return;
+            return false;
 
         if (rank[xRoot] < rank[yRoot]) {
             p[xRoot] = yRoot;
@@ -29,6 +29,7 @@ public:
             p[yRoot] = xRoot;
             rank[xRoot]++;
         }
+        return true;
     }
 
     bool sameUnion(int x, int y) { return Find(x) == Find(y); }
