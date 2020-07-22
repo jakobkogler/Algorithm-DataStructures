@@ -2,6 +2,7 @@
 
 template <int MOD>
 class Modular {
+// using ModInt = Modular<1'000'000'007>;
 public:
     Modular(long long v=0) {
         value = v % MOD;
@@ -84,8 +85,22 @@ public:
         return a.value != b.value;
     }
 
+    friend Modular& operator++(Modular& a, int) {
+        return a += 1;
+    }
+
+    friend Modular operator++(Modular const& a, int) {
+        return Modular(a)++;
+    }
+
+    friend Modular& operator--(Modular& a, int) {
+        return a -= 1;
+    }
+
+    friend Modular operator--(Modular const& a, int) {
+        return Modular(a)--;
+    }
+
     int value;
     static const int MOD_value = MOD;
 };
-
-using ModInt = Modular<1'000'000'007>;
