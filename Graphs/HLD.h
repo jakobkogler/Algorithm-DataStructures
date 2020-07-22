@@ -38,6 +38,19 @@ private:
     std::vector<int> data;
 };
 
+enum ValueType {NodeValues=0, EdgeValues=1};
+
+/**
+ * Heavy-Light decomposition
+ *
+ * Either every edge has a value, or every node has a value.
+ * In the node version, the value of the node `v` is simply stored at `pos[v]`.
+ * In the edge version, the value of the edge `u-v` is stored at `pos[v]`,
+ * where `v` is the child of `u`. Be careful to not include the edge from the LCA to it's parent.
+ *
+ * `head[v]` will be the start of the current path (so the highest ancestor of `v`).
+ */
+template <ValueType VT = EdgeValues>
 class HLD {
 public:
     HLD(std::vector<std::vector<int>> const& adj, int root = 0)
@@ -53,6 +66,18 @@ public:
         decompose(root, root);
 
         segtree = SegmentTree(n);
+    }
+
+    template<ValueType V1 = VT, typename std::enable_if<V1 == NodeValues, int>::type = 0>
+    void update_node(int v, int val) {
+        segtree.update(pos[v], val);
+    }
+
+    template<ValueType V1 = VT, typename std::enable_if<V1 == EdgeValues, int>::type = 0>
+    void update_edge(int u, int v, int val) {
+        if (depth[u] > depth[v])
+            std::swap(u, v);
+        segtree.update(pos[v], val);
     }
 
     int dfs(int v, int p = -1, int d = 0) {
@@ -95,7 +120,7 @@ public:
 
         if (depth[a] > depth[b])
             std::swap(a, b);
-        int last_heavy_path = segtree.maximum(pos[a] + 1, pos[b] + 1);
+        int last_heavy_path = segtree.maximum(pos[a] + VT, pos[b] + 1);
         res = std::max(res, last_heavy_path);
         return res;
     }
