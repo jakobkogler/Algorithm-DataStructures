@@ -1,6 +1,6 @@
 int MOD = 1e9 + 7;
 
-long long power(long long base, int e, int M=MOD)
+int power(long long base, int e, int M=MOD)
 {
     long long result = 1;
     base %= M;
