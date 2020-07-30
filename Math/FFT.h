@@ -1,6 +1,9 @@
+#pragma once
 #include <vector>
 #include <complex>
 #include <algorithm>
+#include "Modular.h"
+#include "MontgomeryModular.h"
 
 template <typename T>
 void transpose(std::vector<std::vector<T>> & M) {
@@ -18,7 +21,11 @@ void transpose(std::vector<std::vector<T>> & M) {
 
 class FFT {
 public:
-    FFT(int max_degree) {
+    FFT(int max_degree=1) {
+        init(max_degree);
+    }
+
+    void init(int max_degree) {
         int lg = get_lg(max_degree + 1);
         reverse.resize(lg + 1);
 
@@ -88,17 +95,6 @@ public:
         }
     }
 
-    template <typename T>
-    std::vector<long long> multiply_brute_force(std::vector<T> const& a, std::vector<T> const& b, int sz) {
-        std::vector<long long> result(sz);
-        for (int i = 0; i < (int)a.size(); i++) {
-            for (int j = 0; j < (int)b.size(); j++) {
-                result[i + j] += a[i] * b[j];
-            }
-        }
-        return result;
-    }
-
     void multiply(vcd & fa, vcd & fb) {
         int result_size = fa.size() + fb.size() - 1;
         int size = 1 << get_lg(result_size);
@@ -115,17 +111,19 @@ public:
     }
 
     template <typename T>
-    std::vector<long long> multiply(std::vector<T> const& a, std::vector<T> const& b) {
+    std::vector<T> multiply(std::vector<T> const& a, std::vector<T> const& b) {
         int result_size = a.size() + b.size() - 1;
-        if (result_size <= 200)
-            return multiply_brute_force(a, b, result_size);
-
         vcd fa(a.begin(), a.end()), fb(b.begin(), b.end());
         multiply(fa, fb);
+        fa.resize(result_size);
+        return convert_back<T>(fa);
+    }
 
-        std::vector<long long> result(result_size);
-        for (int i = 0; i < result_size; i++)
-            result[i] = std::llround(fa[i].real());
+    template <typename T>
+    std::vector<T> convert_back(vcd const& v) {
+        std::vector<T> result(v.size());
+        for (int i = 0; i < v.size(); i++)
+            result[i] = v[i].real();
         return result;
     }
 
@@ -164,7 +162,8 @@ public:
             row.resize(result_c);
     }
 
-    std::vector<int> multiply_mod(std::vector<int> const& a, std::vector<int> const& b, int const mod) {
+    template<typename T>
+    std::vector<T> multiply_mod(std::vector<T> const& a, std::vector<T> const& b, int const mod) {
         int result_size = a.size() + b.size() - 1;
         int size = 1 << get_lg(result_size);
 
@@ -204,3 +203,50 @@ private:
     std::vector<vcd> ws;
     const double PI = std::acos(-1);
 };
+
+template <>
+std::vector<long long> FFT::convert_back(vcd const& v) {
+    std::vector<long long> result(v.size());
+    for (int i = 0; i < v.size(); i++)
+        result[i] = std::llround(v[i].real());
+    return result;
+}
+
+template <>
+std::vector<int> FFT::convert_back(vcd const& v) {
+    std::vector<int> result(v.size());
+    for (int i = 0; i < v.size(); i++)
+        result[i] = std::round(v[i].real());
+    return result;
+}
+
+FFT fft;
+
+template <typename T>
+std::vector<T> from_int_vector(std::vector<int> const& v) {
+    return std::vector<T>(v.begin(), v.end());
+}
+
+template <typename T>
+std::vector<int> to_int_vector(std::vector<T> const& v) {
+    std::vector<int> w;
+    w.reserve(v.size());
+    for (int i = 0; i < v.size(); i++)
+        w[i] = v[i].value;
+    return w;
+}
+
+template <typename T>
+std::vector<T> fft_multiply(std::vector<T> const& a, std::vector<T> const& b) {
+    return fft.multiply(a, b);
+}
+
+template <int MOD>
+std::vector<Modular<MOD>> fft_multiply(std::vector<Modular<MOD>> const& a, std::vector<Modular<MOD>> const& b) {
+    return from_int_vector<Modular<MOD>>(fft.multiply_mod(to_int_vector(a), to_int_vector(b), MOD));
+}
+
+template <int MOD>
+std::vector<MontgomeryModular<MOD>> fft_multiply(std::vector<MontgomeryModular<MOD>> const& a, std::vector<MontgomeryModular<MOD>> const& b) {
+    return from_int_vector<MontgomeryModular<MOD>>(fft.multiply_mod(to_int_vector(a), to_int_vector(b), MOD));
+}
