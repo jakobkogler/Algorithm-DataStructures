@@ -31,16 +31,16 @@ public:
 
         int size = 1 << lg;
         ws.resize(lg);
-        ws[lg-1].resize(size >> 1);
-        for (int i = 0; i < (size >> 1); i++) {
-            double ang = 2 * PI * i / size;
-            ws[lg-1][i] = {cos(ang), sin(ang)};
-        }
-        for (int j = lg - 2; j >= 0; j--) {
-            int sz_level = ws[j+1].size() >> 1;
-            ws[j].resize(sz_level);
-            for (int i = 0; i < sz_level; i++)
-                ws[j][i] = ws[j+1][i<<1];
+        ws[0] = {{1, 0}};
+        for (int j = 1; j < lg; j++) {
+            int sz_level = 1 << j;
+            ws[j].reserve(sz_level);
+            double angle = PI / sz_level;
+            cd z(cos(angle), sin(angle));
+            for (const auto x : ws[j-1]) {
+                ws[j].push_back(x);
+                ws[j].push_back(x * z);
+            }
         }
     }
 
@@ -50,14 +50,10 @@ public:
 
     void precompute_reverse(int lg) {
         int size = 1 << lg;
-        reverse[lg].assign(size, 0);
-        for (int i = 1, j = 0; i < size; i++) {
-            int bit = size >> 1;
-            for (; j & bit; bit >>= 1)
-                j ^= bit;
-            j ^= bit;
-            reverse[lg][i] = j;
-        }
+        auto& rev = reverse[lg];
+        rev.assign(size, 0);
+        for (int i = 1; i < size; i++)
+            rev[i] = (rev[i >> 1] >> 1) + ((i & 1) << (lg - 1));
     }
 
     using cd = std::complex<double>;
