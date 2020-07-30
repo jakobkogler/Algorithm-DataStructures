@@ -95,14 +95,16 @@ public:
         return A;
     }
     friend Mat operator+(Mat const& A, Mat const& B) {
-        return Mat(A) += B;
+        Mat C = A;
+        return C += B;
     }
     friend Mat& operator-=(Mat& A, Mat const& B) {
         A.data -= B.data;
         return A;
     }
     friend Mat operator-(Mat const& A, Mat const& B) {
-        return Mat(A) -= B;
+        Mat C = A;
+        return C -= B;
     }
     friend Vec operator*(Mat const& M, Vec const& v) {
         Vec res(v.size(), 0);
