@@ -5,6 +5,29 @@
 #include <iostream>
 
 template <typename T>
+class Vector;
+
+template <typename T>
+class VecView {
+public:
+    using Iter = typename std::vector<T>::iterator;
+    VecView(Iter begin_, int step=1) : begin_(begin_), step(step) {}
+    T& operator[](int idx) {
+        auto cpy = begin_;
+        std::advance(cpy, idx * step);
+        return *cpy;
+    }
+    T operator[](int idx) const {
+        auto cpy = begin_;
+        std::advance(cpy, idx * step);
+        return *cpy;
+    }
+private:
+    Iter begin_;
+    int step;
+};
+
+template <typename T>
 class Vector : public std::vector<T> {
 public:
     Vector(int n, T init = 0) : std::vector<T>(n, init) {}
@@ -193,28 +216,11 @@ public:
         return data[get_idx(row, column)];
     }
 
-    class RowView {
-    public:
-        RowView(int row, Mat& mat) : row(row), mat(mat) {}
-        T& operator[](int col) { return mat.get(row, col); }
-        T operator[](int col) const { return mat.get(row, col); }
-    private:
-        int row;
-        Mat& mat;
-    };
-    class RowViewConst {
-    public:
-        RowViewConst(int row, Mat const& mat) : row(row), mat(mat) {}
-        T operator[](int col) const { return mat.get(row, col); }
-    private:
-        int row;
-        Mat const& mat;
-    };
-    RowView operator[](int row) {
-        return RowView(row, *this);
+    VecView<T> operator[](int row) {
+        return VecView<T>(data.begin() + row * columns);
     }
-    RowViewConst operator[](int row) const {
-        return RowViewConst(row, *this);
+    VecView<T> const operator[](int row) const {
+        return VecView<T>(data.begin() + row * columns);
     }
     T trace() const {
         T sum = 0;
