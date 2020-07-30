@@ -91,28 +91,28 @@ public:
         }
     }
 
-    void multiply(vcd & fa, vcd & fb) {
-        int result_size = fa.size() + fb.size() - 1;
-        int size = 1 << get_lg(result_size);
-        fa.resize(size);
-        fb.resize(size);
-
-        fft(fa, false);
-        fft(fb, false);
-        for (int i = 0; i < size; i++)
-            fa[i] *= fb[i];
-        fft(fa, true);
-
-        fa.resize(result_size);
-    }
-
     template <typename T>
     std::vector<T> multiply(std::vector<T> const& a, std::vector<T> const& b) {
         int result_size = a.size() + b.size() - 1;
-        vcd fa(a.begin(), a.end()), fb(b.begin(), b.end());
-        multiply(fa, fb);
-        fa.resize(result_size);
-        return convert_back<T>(fa);
+        int size = 1 << get_lg(result_size);
+        vcd f(size, {0, 0});
+        int sz = std::max(a.size(), b.size());
+        for (int i = 0; i < sz; i++) {
+            const T& A = i < a.size() ? a[i] : 0;
+            const T& B = i < b.size() ? b[i] : 0;
+            f[i] = {(double)A, (double)B};
+        }
+
+        fft(f, false);
+        vcd h(size);
+        cd factor(0, -0.25);
+        for (int i = 0; i < size; i++) {
+            int j = (size - i) & (size - 1);
+            h[i] = (f[i]*f[i] - std::conj(f[j]*f[j])) * factor;
+        }
+        fft(h, true);
+        h.resize(result_size);
+        return convert_back<T>(h);
     }
 
     template <typename T>
