@@ -12,7 +12,7 @@ public:
         a /= g;
         b /= g;
     }
-    
+
     Fraction& operator+=(Fraction const& other) {
         long long g = gcd(b, other.b);
         a = a * (other.b / g) + (b / g) * other.a;
