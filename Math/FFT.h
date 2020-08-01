@@ -228,7 +228,7 @@ std::vector<int> to_int_vector(std::vector<T> const& v) {
     std::vector<int> w;
     w.reserve(v.size());
     for (int i = 0; i < v.size(); i++)
-        w[i] = v[i].value;
+        w.push_back(v[i].value);
     return w;
 }
 
