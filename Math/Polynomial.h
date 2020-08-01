@@ -122,48 +122,6 @@ public:
         return ret;
     }
 
-    /**
-     * Computes the reciprocal polynomial modulo x^n
-     */
-    Polynomial<T> reciprocal(int n) const {
-        assert(coeffs[0] != 0);
-        int sz = 1;
-        Polynomial<T> R({T(1) / coeffs[0]});
-        while (sz < n) {
-            sz *= 2;
-            R = R * 2 - R * R * (*this % sz);
-        }
-        return R % n;
-    }
-
-    /**
-     * reverse the coefficients of the polynomial
-     */
-    Polynomial<T> rev() const {
-        Polynomial<T> ret({coeffs.rbegin(), coeffs.rend()});
-        ret.shorten();
-        return ret;
-    }
-
-    /**
-     * divide this polynomial by g
-     */
-    Polynomial<T> divide(Polynomial<T> const& g) const {
-        /* if ( */
-        int n = deg() - g.deg() + 1;
-        return (rev() * g.rev().reciprocal(n) % n).rev();
-    }
-
-    /**
-     * Computes the divisor and remainder of a division by g
-     */
-    std::pair<Polynomial<T>, Polynomial<T>> divide_modulo(Polynomial<T> const& g) const {
-        /* if ( */
-        auto q = divide(g);
-        auto r = *this - g * q;
-        return std::make_pair(q, r);
-    }
-
     int deg() const {
         if (coeffs.size() == 1)
             return coeffs[0] != 0 ? 1 : 0;
@@ -200,5 +158,47 @@ private:
             }
         }
         return result;
+    }
+
+    /**
+     * Computes the reciprocal polynomial modulo x^n in O(n log(n))
+     */
+    Polynomial<T> reciprocal(int n) const {
+        assert(coeffs[0] != 0);
+        int sz = 1;
+        Polynomial<T> R({T(1) / coeffs[0]});
+        while (sz < n) {
+            sz *= 2;
+            R = R * 2 - R * R * (*this % sz);
+        }
+        return R % n;
+    }
+
+    /**
+     * reverse the coefficients of the polynomial
+     */
+    Polynomial<T> rev() const {
+        Polynomial<T> ret({coeffs.rbegin(), coeffs.rend()});
+        ret.shorten();
+        return ret;
+    }
+
+    /**
+     * divide this polynomial by g in O(n log(n))
+     */
+    Polynomial<T> divide(Polynomial<T> const& g) const {
+        /* if ( */
+        int n = deg() - g.deg() + 1;
+        return (rev() * g.rev().reciprocal(n) % n).rev();
+    }
+
+    /**
+     * Computes the divisor and remainder of a division by g in O(n log(n))
+     */
+    std::pair<Polynomial<T>, Polynomial<T>> divide_modulo(Polynomial<T> const& g) const {
+        /* if ( */
+        auto q = divide(g);
+        auto r = *this - g * q;
+        return std::make_pair(q, r);
     }
 };
