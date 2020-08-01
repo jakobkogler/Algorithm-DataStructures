@@ -122,6 +122,14 @@ public:
         return ret;
     }
 
+    /**
+     * Compute the product of the linear factors (x - r[0]) * (x - r[1]) * ...
+     * using binary splitting in O(n log(n)^2)
+     */
+    static Polynomial<T> linear_factors_product(std::vector<T> const& r) {
+        return linear_factors_product(r, 0, r.size());
+    }
+
     int deg() const {
         if (coeffs.size() == 1)
             return coeffs[0] != 0 ? 1 : 0;
@@ -200,5 +208,16 @@ private:
         auto q = divide(g);
         auto r = *this - g * q;
         return std::make_pair(q, r);
+    }
+
+    /**
+     * Compute the product of the linear factors (x - r[0]) * (x - r[1]) * ...
+     * using binary splitting in O(n log(n)^2)
+     */
+    static Polynomial<T> linear_factors_product(std::vector<T> const& roots, int l, int r) {
+        if (l + 1 == r)
+            return Polynomial<T>({-roots[l], 1});
+        int m = (l + r) / 2;
+        return linear_factors_product(roots, l, m) * linear_factors_product(roots, m, r);
     }
 };
