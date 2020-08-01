@@ -130,6 +130,16 @@ public:
         return linear_factors_product(r, 0, r.size());
     }
 
+    /**
+     * Evaluate the polynomial at multiple points in O(n log(n)^2)
+     */
+    std::vector<T> multi_point_evaluation(std::vector<T> const& x) {
+        int n = x.size();
+        std::vector<Polynomial<T>> tree(4*n);
+        linear_factors_product(x, tree, 1, 0, n);
+        return multi_point_evaluation(x, tree, 1, 0, n);
+    }
+
     int deg() const {
         if (coeffs.size() == 1)
             return coeffs[0] != 0 ? 1 : 0;
@@ -219,5 +229,32 @@ private:
             return Polynomial<T>({-roots[l], 1});
         int m = (l + r) / 2;
         return linear_factors_product(roots, l, m) * linear_factors_product(roots, m, r);
+    }
+
+    /**
+     * Compute the product of the linear factors (x - r[0]) * (x - r[1]) * ...
+     * using binary splitting in O(n log(n)^2) and store the tree
+     */
+    static Polynomial<T> linear_factors_product(std::vector<T> const& roots, std::vector<Polynomial<T>>& tree, int v, int l, int r) {
+        if (l + 1 == r)
+            return tree[v] = Polynomial<T>({-roots[l], 1});
+        int m = (l + r) / 2;
+        return tree[v] = linear_factors_product(roots, tree, 2*v, l, m) * linear_factors_product(roots, tree, 2*v+1, m, r);
+    }
+
+    /**
+     * Compute the product of the linear factors (x - r[0]) * (x - r[1]) * ...
+     * using binary splitting in O(n log(n)^2) and store the tree
+     */
+    std::vector<T> multi_point_evaluation(std::vector<T> const& x, std::vector<Polynomial<T>> const& tree, int v, int l, int r) const {
+        if (l + 1 == r)
+            return {evaluate(x[l])};
+        auto A1 = *this % tree[2*v];
+        auto A2 = *this % tree[2*v+1];
+        int m = (l + r) / 2;
+        auto res1 = A1.multi_point_evaluation(x, tree, 2*v, l, m);
+        auto res2 = A2.multi_point_evaluation(x, tree, 2*v+1, m, r);
+        res1.insert(res1.end(), res2.begin(), res2.end());
+        return res1;
     }
 };
