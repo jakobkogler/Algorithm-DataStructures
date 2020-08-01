@@ -46,14 +46,6 @@ public:
         return Polynomial<T>(*this) *= x;
     }
 
-    Polynomial<T>& operator/=(T const& x) {
-        return *this *= (1 / x);
-    }
-
-    Polynomial<T> operator/(T const& x) const {
-        return Polynomial<T>(*this) /= x;
-    }
-
     Polynomial<T>& operator*=(Polynomial<T> const& other) {
         int result_deg = deg() + other.deg() - 1;
         if (result_deg <= 200) {
@@ -69,6 +61,34 @@ public:
         return Polynomial<T>(*this) *= other;
     }
 
+    Polynomial<T>& operator/=(T const& x) {
+        return *this *= (1 / x);
+    }
+
+    Polynomial<T> operator/(T const& x) const {
+        return Polynomial<T>(*this) /= x;
+    }
+
+    Polynomial<T> operator/(Polynomial<T> const& other) const {
+        return divide(other);
+    }
+
+    Polynomial<T>& operator/=(Polynomial<T> const& other) {
+        auto res = divide(other);
+        coeffs.swap(res.coeffs);
+        return *this;
+    }
+
+    Polynomial<T> operator%(Polynomial<T> const& other) const {
+        return divide_modulo(other).second;
+    }
+
+    Polynomial<T>& operator%=(Polynomial<T> const& other) {
+        auto res = divide_modulo(other).second;
+        coeffs.swap(res.coeffs);
+        return *this;
+    }
+
     T evaluate(T const& x) const {  // Horner's method
         T res = 0;
         for (int i = coeffs.size() - 1; i >= 0; i--)
@@ -78,6 +98,15 @@ public:
 
     T operator()(T const& x) const {
         return evaluate(x);
+    }
+
+    Polynomial<T> derivation() const {
+        auto cpy = coeffs;
+        for (int i = 1; i < cpy.size(); i++) {
+            cpy[i-1] = cpy[i] * i;
+        }
+        cpy.pop_back();
+        return Polynomial<T>(cpy);
     }
 
     /**
@@ -92,6 +121,7 @@ public:
         ret.shorten();
         return ret;
     }
+
     /**
      * Computes the reciprocal polynomial modulo x^n
      */
@@ -105,6 +135,7 @@ public:
         }
         return R % n;
     }
+
     /**
      * reverse the coefficients of the polynomial
      */
@@ -113,6 +144,7 @@ public:
         ret.shorten();
         return ret;
     }
+
     /**
      * divide this polynomial by g
      */
@@ -121,6 +153,7 @@ public:
         int n = deg() - g.deg() + 1;
         return (rev() * g.rev().reciprocal(n) % n).rev();
     }
+
     /**
      * Computes the divisor and remainder of a division by g
      */
@@ -149,6 +182,7 @@ public:
         }
         return os;
     }
+
     void shorten() {
         while (coeffs.back() == 0 && coeffs.size() > 1)
             coeffs.pop_back();
