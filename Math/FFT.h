@@ -45,6 +45,9 @@ public:
     }
 
     int get_lg(int x) {
+        if (x < 2)
+            return 2;
+        // assert(x > 1);
         return x ? 32 - __builtin_clz(x - 1) : 0;
     }
 
