@@ -11,7 +11,7 @@ public:
 
     Polynomial<T>& operator+=(Polynomial<T> const& other) {
         coeffs.resize(max(coeffs.size(), other.coeffs.size()));
-        for (int i = 0; i < (int)coeffs.size(); i++) {
+        for (int i = 0; i < (int)other.coeffs.size(); i++) {
             coeffs[i] += other.coeffs[i];
         }
         shorten();
@@ -24,7 +24,7 @@ public:
 
     Polynomial<T>& operator-=(Polynomial<T> const& other) {
         coeffs.resize(max(coeffs.size(), other.coeffs.size()));
-        for (int i = 0; i < (int)coeffs.size(); i++) {
+        for (int i = 0; i < (int)other.coeffs.size(); i++) {
             coeffs[i] -= other.coeffs[i];
         }
         shorten();
