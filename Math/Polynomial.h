@@ -70,21 +70,21 @@ public:
     }
 
     Polynomial<T> operator/(Polynomial<T> const& other) const {
-        return divide(other);
+        return divide(other).first;
     }
 
     Polynomial<T>& operator/=(Polynomial<T> const& other) {
-        auto res = divide(other);
+        auto res = divide(other).first;
         coeffs.swap(res.coeffs);
         return *this;
     }
 
     Polynomial<T> operator%(Polynomial<T> const& other) const {
-        return divide_modulo(other).second;
+        return divide(other).second;
     }
 
     Polynomial<T>& operator%=(Polynomial<T> const& other) {
-        auto res = divide_modulo(other).second;
+        auto res = divide(other).second;
         coeffs.swap(res.coeffs);
         return *this;
     }
@@ -179,6 +179,24 @@ private:
     }
 
     /**
+     * extracts the coefficients from l to r
+     */
+    Polynomial<T> substr(int l, int r) const {
+        l = std::min(l, (int)coeffs.size());
+        r = std::min(r, (int)coeffs.size());
+        return Polynomial<T>(std::vector<T>(coeffs.begin() + l, coeffs.begin() + r));
+    }
+
+    /**
+     * multiplies the polynomial with x^n
+     */
+    Polynomial<T> operator<<(int n) const {
+        auto cpy = *this;
+        cpy.coeffs.insert(cpy.coeffs.begin(), n, 0);
+        return cpy;
+    }
+
+    /**
      * Computes the reciprocal polynomial modulo x^n in O(n log(n))
      */
     Polynomial<T> reciprocal(int n) const {
@@ -186,8 +204,10 @@ private:
         int sz = 1;
         Polynomial<T> R({T(1) / coeffs[0]});
         while (sz < n) {
+            // trick from adamant
+            auto C = (R * (*this % (3 * sz))).substr(sz, 2 * sz);
+            R -= (R * C % sz) << sz;
             sz *= 2;
-            R = (R * 2 - (R * R % sz) * (*this % sz)) % sz;
         }
         return R % n;
     }
@@ -203,21 +223,39 @@ private:
 
     /**
      * divide this polynomial by g in O(n log(n))
+     * returns quotient and remainder
      */
-    Polynomial<T> divide(Polynomial<T> const& g) const {
-        /* if ( */
+    std::pair<Polynomial<T>, Polynomial<T>> divide(Polynomial<T> const& g) const {
+        if (deg() < g.deg())
+            return {Polynomial({T(0)}), *this};
         int n = deg() - g.deg() + 1;
-        return (rev() * g.rev().reciprocal(n) % n).rev();
+        if (min(n, g.deg()) < 500)
+            return divide_brute_force(g);
+
+        auto quotient = ((rev() % n) * (g.rev() % n).reciprocal(n) % n).rev();
+        return {quotient, *this - quotient * g};
     }
 
     /**
-     * Computes the divisor and remainder of a division by g in O(n log(n))
+     * Normal division from school
+     * returns quotient and remainder
      */
-    std::pair<Polynomial<T>, Polynomial<T>> divide_modulo(Polynomial<T> const& g) const {
-        /* if ( */
-        auto q = divide(g);
-        auto r = *this - g * q;
-        return std::make_pair(q, r);
+    std::pair<Polynomial<T>, Polynomial<T>> divide_brute_force(Polynomial<T> const& g) const {
+        std::vector<T> divident(coeffs);
+        const auto& divisor = g.coeffs;
+        std::vector<T> quotient;
+        quotient.reserve(divident.size() - divisor.size() + 1);
+        while (divident.size() >= divisor.size()) {
+            T q = divident.back() / divisor.back();
+            quotient.push_back(q);
+            // int offset = 
+            for (int i = 0; i < divisor.size(); i++) {
+                divident[divident.size() - i - 1] -= q * divisor[divisor.size() - i - 1];
+            }
+            divident.pop_back();
+        }
+        std::reverse(quotient.begin(), quotient.end());
+        return {Polynomial<T>(quotient), Polynomial<T>(divident)};
     }
 
     /**
@@ -249,11 +287,10 @@ private:
     std::vector<T> multi_point_evaluation(std::vector<T> const& x, std::vector<Polynomial<T>> const& tree, int v, int l, int r) const {
         if (l + 1 == r)
             return {evaluate(x[l])};
-        auto A1 = *this % tree[2*v];
-        auto A2 = *this % tree[2*v+1];
+
         int m = (l + r) / 2;
-        auto res1 = A1.multi_point_evaluation(x, tree, 2*v, l, m);
-        auto res2 = A2.multi_point_evaluation(x, tree, 2*v+1, m, r);
+        std::vector<T> res1 = (*this % tree[2*v]).multi_point_evaluation(x, tree, 2*v, l, m);
+        auto res2 = (*this % tree[2*v+1]).multi_point_evaluation(x, tree, 2*v+1, m, r);
         res1.insert(res1.end(), res2.begin(), res2.end());
         return res1;
     }
