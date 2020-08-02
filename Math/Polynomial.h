@@ -187,7 +187,7 @@ private:
         Polynomial<T> R({T(1) / coeffs[0]});
         while (sz < n) {
             sz *= 2;
-            R = R * 2 - R * R * (*this % sz);
+            R = (R * 2 - (R * R % sz) * (*this % sz)) % sz;
         }
         return R % n;
     }
