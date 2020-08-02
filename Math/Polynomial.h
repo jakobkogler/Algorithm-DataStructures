@@ -235,13 +235,16 @@ private:
      * returns quotient and remainder
      */
     std::pair<Polynomial<T>, Polynomial<T>> divide(Polynomial<T> const& g) const {
+        assert(g.coeffs.size() > 0);
         if (deg() < g.deg())
-            return {Polynomial({T(0)}), *this};
+            return {Polynomial<T>(), *this};
         int n = deg() - g.deg() + 1;
         if (min(n, g.deg()) < 500)
             return divide_brute_force(g);
 
         auto quotient = ((rev() % n) * (g.rev() % n).reciprocal(n) % n).rev();
+        // fill if too short
+        quotient = quotient << (n - quotient.coeffs.size());
         return {quotient, *this - quotient * g};
     }
 
