@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <utility>
+#include <ostream>
 
 template <int MOD>
 class MontgomeryModular {
@@ -17,38 +18,61 @@ public:
         value -= (((i32)mod - 1 - (i32)value) >> 31) & (i32)mod;
         return *this;
     }
+
     MM operator+(MM const& other) const {
         MM cpy = *this;
         return cpy += other;
     }
+
     MM& operator-=(MM const& other) {
         value += mod - other.value;
         value -= (((i32)mod - 1 - (i32)value) >> 31) & (i32)mod;
         return *this;
     }
+
     MM operator-(MM const& other) const {
         MM cpy = *this;
         return cpy -= other;
     }
+
+    MM operator-() const {
+        return MM(0) - *this;
+    }
+
     MM& operator*=(MM const& other) {
         value = mult(value, other.value);
         return *this;
     }
+
     MM operator*(MM const& other) const {
         MM cpy = *this;
         return cpy *= other;
     }
+
     MM& operator/=(MM const& other) {
-        return *this *= other.inverse();
+        return *this *= inverse(other);
     }
+
     MM operator/(MM const& other) {
         MM cpy = *this;
-        return cpy *= other.inverse();
+        return cpy /= other;
     }
-    MM inverse() const {
+
+    friend MM inverse(MM a) {
         MM x;
-        x.value = phase2(reduce(value));
+        x.value = MM::phase2(MM::reduce(a.value));
         return x;
+    }
+
+    friend MM power(MM a, long long e) {
+        MM res(1);
+        while (e) {
+            if (e & 1)
+                res *= a;
+            a *= a;
+            e >>= 1;
+        }
+        return res;
     }
 
     u32 normal() const {
@@ -62,7 +86,7 @@ public:
     bool operator==(MontgomeryModular<MOD> const& mm) const {
         return value == mm.value;
     }
-    
+
     bool operator!=(MontgomeryModular<MOD> const& mm) const {
         return value != mm.value;
     }
@@ -77,7 +101,7 @@ public:
     static const u32 mod = MOD;
 
 private:
-    u32 reduce(u64 x) const {
+    static u32 reduce(u64 x) {
         u32 xlow = x;
         u32 xhigh = x >> 32;
         u32 q = xlow * inv;
@@ -107,7 +131,7 @@ private:
         }
         return r2;
     }
-    
+
     static const u32 inv = compute_inv(MOD);
     static const u32 r2 = compute_r2(MOD);
 
