@@ -47,6 +47,11 @@ public:
     }
 
     Polynomial<T>& operator*=(Polynomial<T> const& other) {
+        if (coeffs.empty() || other.coeffs.empty()) {
+            coeffs.clear();
+            return *this;
+        }
+
         int result_deg = deg() + other.deg() - 1;
         if (result_deg <= 200) {
             coeffs = multiply_brute_force(coeffs, other.coeffs, result_deg);
@@ -62,7 +67,7 @@ public:
     }
 
     Polynomial<T>& operator/=(T const& x) {
-        return *this *= (1 / x);
+        return *this *= T(1) / x;
     }
 
     Polynomial<T> operator/(T const& x) const {
@@ -90,8 +95,8 @@ public:
     }
 
     T evaluate(T const& x) const {  // Horner's method
-        T res = 0;
-        for (int i = coeffs.size() - 1; i >= 0; i--)
+        T res(0);
+        for (int i = (int)coeffs.size() - 1; i >= 0; i--)
             res = res * x + coeffs[i];
         return res;
     }
@@ -113,8 +118,6 @@ public:
      * Computes the poloynomial modulo x^n (so just the first n coefficitiens)
      */
     Polynomial<T> operator%(int n) const {
-        if (n == 0)
-            return Polynomial<T>({0});
         if ((int)coeffs.size() <= n)
             return *this;
         Polynomial<T> ret({coeffs.begin(), coeffs.begin() + n});
@@ -127,6 +130,8 @@ public:
      * using binary splitting in O(n log(n)^2)
      */
     static Polynomial<T> linear_factors_product(std::vector<T> const& r) {
+        if ((int)r.size() == 0)
+            return Polynomial<T>({1});
         return linear_factors_product(r, 0, r.size());
     }
 
@@ -135,19 +140,22 @@ public:
      */
     std::vector<T> multi_point_evaluation(std::vector<T> const& x) {
         int n = x.size();
+        if (n == 0)
+            return {};
         std::vector<Polynomial<T>> tree(4*n);
         linear_factors_product(x, tree, 1, 0, n);
         return multi_point_evaluation(x, tree, 1, 0, n);
     }
 
+    /**
+     * Degree of the polynomial (acutally degree + 1, with deg = 0 for the 0 polynomial)
+     */
     int deg() const {
-        if (coeffs.size() == 1)
-            return coeffs[0] != 0 ? 1 : 0;
         return coeffs.size();
     }
 
     friend std::ostream& operator<<(std::ostream& os, Polynomial<T> const& p) {
-        for (int i = p.coeffs.size() - 1; i >= 0; i--) {
+        for (int i = (int)p.coeffs.size() - 1; i >= 0; i--) {
             os << p.coeffs[i];
             if (i)
                 os << "*x";
@@ -160,7 +168,7 @@ public:
     }
 
     void shorten() {
-        while (coeffs.back() == 0 && coeffs.size() > 1)
+        while (coeffs.size() > 0 && coeffs.back() == 0)
             coeffs.pop_back();
     }
 
@@ -192,7 +200,8 @@ private:
      */
     Polynomial<T> operator<<(int n) const {
         auto cpy = *this;
-        cpy.coeffs.insert(cpy.coeffs.begin(), n, 0);
+        if (cpy.coeffs.size())
+            cpy.coeffs.insert(cpy.coeffs.begin(), n, T(0));
         return cpy;
     }
 
@@ -200,7 +209,7 @@ private:
      * Computes the reciprocal polynomial modulo x^n in O(n log(n))
      */
     Polynomial<T> reciprocal(int n) const {
-        assert(coeffs[0] != 0);
+        assert(coeffs.size() && coeffs[0] != 0);
         int sz = 1;
         Polynomial<T> R({T(1) / coeffs[0]});
         while (sz < n) {
