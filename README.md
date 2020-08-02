@@ -29,6 +29,15 @@ It can be mapped like this:
 nmap <leader>alg :AlgDS<CR>
 ```
 
+## Pretty Printer
+
+There are some pretty printer for GDB.
+You can activate them by putting the following in your `~/.gdbinit`:
+
+```sh
+source ~/.vim/plugged/Algorithm-DataStructures/prettyprint.py
+```
+
 ## License
 
 WTFPL
