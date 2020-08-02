@@ -11,7 +11,7 @@ public:
 
     Polynomial<T>& operator+=(Polynomial<T> const& other) {
         coeffs.resize(max(coeffs.size(), other.coeffs.size()));
-        for (int i = 0; i < coeffs.size(); i++) {
+        for (int i = 0; i < (int)coeffs.size(); i++) {
             coeffs[i] += other.coeffs[i];
         }
         shorten();
@@ -24,7 +24,7 @@ public:
 
     Polynomial<T>& operator-=(Polynomial<T> const& other) {
         coeffs.resize(max(coeffs.size(), other.coeffs.size()));
-        for (int i = 0; i < coeffs.size(); i++) {
+        for (int i = 0; i < (int)coeffs.size(); i++) {
             coeffs[i] -= other.coeffs[i];
         }
         shorten();
@@ -102,7 +102,7 @@ public:
 
     Polynomial<T> derivation() const {
         auto cpy = coeffs;
-        for (int i = 1; i < cpy.size(); i++) {
+        for (int i = 1; i < (int)cpy.size(); i++) {
             cpy[i-1] = cpy[i] * i;
         }
         cpy.pop_back();
@@ -115,7 +115,7 @@ public:
     Polynomial<T> operator%(int n) const {
         if (n == 0)
             return Polynomial<T>({0});
-        if (coeffs.size() <= n)
+        if ((int)coeffs.size() <= n)
             return *this;
         Polynomial<T> ret({coeffs.begin(), coeffs.begin() + n});
         ret.shorten();
@@ -248,8 +248,7 @@ private:
         while (divident.size() >= divisor.size()) {
             T q = divident.back() / divisor.back();
             quotient.push_back(q);
-            // int offset = 
-            for (int i = 0; i < divisor.size(); i++) {
+            for (int i = 0; i < (int)divisor.size(); i++) {
                 divident[divident.size() - i - 1] -= q * divisor[divisor.size() - i - 1];
             }
             divident.pop_back();
@@ -295,3 +294,22 @@ private:
         return res1;
     }
 };
+
+/**
+ * Computes the determinant of the Vandermonde Matrix
+ * This is equivalent to the product Π_{i!=j} (a_j - a_i)
+ * or the square of Π_{i<j} (a_j - a_i)
+ */
+template <typename T>
+T VandermondeDeterminant(std::vector<T> const& v) {
+    auto P = Polynomial<T>::linear_factors_product(v);
+    auto evaled = P.derivation().multi_point_evaluation(v);
+
+    T prod(1);
+    for (auto x : evaled)
+        prod *= x;
+    int n = v.size();
+    if ((long long)n * (n - 1) / 2 % 2)
+        prod *= -1;
+    return prod;
+}

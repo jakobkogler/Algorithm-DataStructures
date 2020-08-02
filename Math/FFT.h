@@ -29,7 +29,6 @@ public:
         int lg = get_lg(max_degree + 1);
         reverse.resize(lg + 1);
 
-        int size = 1 << lg;
         ws.resize(lg);
         ws[0] = {{1, 0}};
         for (int j = 1; j < lg; j++) {
@@ -206,7 +205,7 @@ private:
 template <>
 std::vector<long long> FFT::convert_back(vcd const& v) {
     std::vector<long long> result(v.size());
-    for (int i = 0; i < v.size(); i++)
+    for (int i = 0; i < (int)v.size(); i++)
         result[i] = std::llround(v[i].real());
     return result;
 }
@@ -214,7 +213,7 @@ std::vector<long long> FFT::convert_back(vcd const& v) {
 template <>
 std::vector<int> FFT::convert_back(vcd const& v) {
     std::vector<int> result(v.size());
-    for (int i = 0; i < v.size(); i++)
+    for (int i = 0; i < (int)v.size(); i++)
         result[i] = std::round(v[i].real());
     return result;
 }
@@ -230,7 +229,7 @@ template <typename T>
 std::vector<int> to_int_vector(std::vector<T> const& v) {
     std::vector<int> w;
     w.reserve(v.size());
-    for (int i = 0; i < v.size(); i++)
+    for (int i = 0; i < (int)v.size(); i++)
         w.push_back(v[i].value);
     return w;
 }
