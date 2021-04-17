@@ -80,7 +80,7 @@ public:
     }
     friend Vec operator+(Vec const& v, Vec const& w) {
         Vec r = v;
-        return r += v;
+        return r += w;
     }
     friend Vec& operator-=(Vec& v, Vec const& w) {
         int n = v.size();
@@ -90,7 +90,7 @@ public:
     }
     friend Vec operator-(Vec const& v, Vec const& w) {
         Vec r = v;
-        return r -= v;
+        return r -= w;
     }
 };
 
