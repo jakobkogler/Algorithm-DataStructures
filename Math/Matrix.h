@@ -43,7 +43,11 @@ public:
     IterT end() const { return end_; }
     friend std::ostream& operator<<(std::ostream& os, VecView<IterT> const& vv) {
         os << "[";
-        for (auto const& x : vv) os << x << ", ";
+        for (auto it = vv.begin(); it != vv.end(); ++it) {
+            if (it != vv.begin())
+                os << ", ";
+            os << *it;
+        }
         return os << "]";
     }
 private:
