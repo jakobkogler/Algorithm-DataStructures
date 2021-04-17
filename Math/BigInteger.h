@@ -6,7 +6,7 @@ constexpr int power(int x, int e) {
     return e ? x * power(x, e-1) : 1;
 }
 
-class FFT {
+class FFT_BigMath {
 public:
     using cd = std::complex<double>;
     using vcd = std::vector<cd>;
@@ -126,9 +126,9 @@ private:
     static const double PI;
 };
 
-std::vector<std::vector<int>> FFT::reverse;
-std::vector<FFT::vcd> FFT::ws;
-const double FFT::PI = std::acos(-1);
+std::vector<std::vector<int>> FFT_BigMath::reverse;
+std::vector<FFT_BigMath::vcd> FFT_BigMath::ws;
+const double FFT_BigMath::PI = std::acos(-1);
 
 class BigInteger {
 public:
@@ -273,7 +273,7 @@ public:
         if (sign == 0) {
             data.clear();
         } else {
-            auto result = FFT::multiply(data, o.data);
+            auto result = FFT_BigMath::multiply(data, o.data);
             data.resize(result.size());
             long long carry = 0;
             for (auto i = 0u; i < result.size(); i++) {
