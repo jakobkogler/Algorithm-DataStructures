@@ -78,6 +78,14 @@ public:
         return os << a.value;
     }
 
+    friend std::istream& operator>>(std::istream &is, Modular& a) {
+        is >> a.value;
+        a.value %= MOD;
+        if (a.value < 0)
+            a.value += MOD;
+        return is;
+    }
+
     friend bool operator==(Modular const& a, Modular const& b) {
         return a.value == b.value;
     }
