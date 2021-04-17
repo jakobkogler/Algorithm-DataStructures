@@ -29,6 +29,9 @@ private:
   difference_type step;
 };
 
+template <typename T>
+class Vector;
+
 template <typename IterT>
 class VecView {
 public:
@@ -50,6 +53,12 @@ public:
         }
         return os << "]";
     }
+    Vector<T> copy() const {
+        Vector<T> res;
+        for (const auto& x : *this)
+            res.push_back(x);
+        return res;
+    }
 private:
     IterT begin_, end_;
     int step;
@@ -58,7 +67,7 @@ private:
 template <typename T>
 class Vector : public std::vector<T> {
 public:
-    Vector(int n, T init = 0) : std::vector<T>(n, init) {}
+    Vector(int n  = 0, T init = 0) : std::vector<T>(n, init) {}
     Vector(std::initializer_list<T> const& data) : std::vector<T>(data) {}
     using Vec = Vector<T>;
 
