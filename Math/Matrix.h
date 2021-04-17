@@ -7,23 +7,47 @@
 template <typename T>
 class Vector;
 
-template <typename T>
+template<class IterT>
+class StrideIter
+{
+public:
+  using value_type = typename std::iterator_traits<IterT>::value_type;
+  using reference = typename std::iterator_traits<IterT>::reference;
+  using difference_type = typename std::iterator_traits<IterT>::difference_type;
+  StrideIter(IterT x, int step) : m(x), step(step) { }
+
+  StrideIter& operator++( ) { m += step; return *this; }
+  StrideIter operator++(int) { auto tmp = *this; m += step; return tmp; }
+  reference operator[](const difference_type n) { return m[n * step]; }
+  value_type operator[](const difference_type n) const { return m[n * step]; }
+  reference operator*( ) { return *m; }
+
+  friend bool operator==(const StrideIter& x, const StrideIter& y) { return x.m == y.m; }
+  friend bool operator!=(const StrideIter& x, const StrideIter& y) { return x.m != y.m; }
+private:
+  IterT m;
+  difference_type step;
+};
+
+template <typename IterT>
 class VecView {
 public:
-    using Iter = typename std::vector<T>::iterator;
-    VecView(Iter begin_, int step=1) : begin_(begin_), step(step) {}
-    T& operator[](int idx) {
-        auto cpy = begin_;
-        std::advance(cpy, idx * step);
-        return *cpy;
-    }
-    T operator[](int idx) const {
-        auto cpy = begin_;
-        std::advance(cpy, idx * step);
-        return *cpy;
+    using T = typename IterT::value_type;
+    VecView(IterT begin_, IterT end_) : begin_(begin_), end_(end_) {}
+    T& operator[](int idx) { return begin_[idx]; }
+    T operator[](int idx) const { return begin_[idx]; }
+    T sum() const { return std::accumulate(begin(), end(), T(0)); }
+    T min() const { return *std::min_element(begin(), end()); }
+    T max() const { return *std::max_element(begin(), end()); }
+    IterT begin() const { return begin_; }
+    IterT end() const { return end_; }
+    friend std::ostream& operator<<(std::ostream& os, VecView<IterT> const& vv) {
+        os << "[";
+        for (auto const& x : vv) os << x << ", ";
+        return os << "]";
     }
 private:
-    Iter begin_;
+    IterT begin_, end_;
     int step;
 };
 
@@ -31,13 +55,7 @@ template <typename T>
 class Vector : public std::vector<T> {
 public:
     Vector(int n, T init = 0) : std::vector<T>(n, init) {}
-    Vector(std::initializer_list<T> const& data) {
-        this->reserve(data.size());
-        for (auto& elem : data) {
-            this->push_back(elem);
-        }
-    }
-
+    Vector(std::initializer_list<T> const& data) : std::vector<T>(data) {}
     using Vec = Vector<T>;
 
     T sum() const {
@@ -218,15 +236,37 @@ public:
         return data[get_idx(row, column)];
     }
 
-    VecView<T> operator[](int row) {
-        return VecView<T>(data.begin() + row * columns);
+    using IterForView = StrideIter<typename std::vector<T>::iterator>;
+    using IterForViewConst = StrideIter<typename std::vector<T>::const_iterator>;
+    VecView<IterForView> row(int row_idx) {
+        auto beg = IterForView(data.begin() + row_idx * columns, 1);
+        auto end = IterForView(data.begin() + (row_idx + 1) * columns, 1);
+        return {beg, end};
     }
-    VecView<T> const operator[](int row) const {
-        return VecView<T>(data.begin() + row * columns);
+    VecView<IterForViewConst> const row(int row_idx) const {
+        auto beg = IterForViewConst(data.cbegin() + row_idx * columns, 1);
+        auto end = IterForViewConst(data.cbegin() + (row_idx + 1) * columns, 1);
+        return {beg, end};
+    }
+    VecView<IterForView> column(int col_idx) {
+        auto beg = IterForView(data.begin() + col_idx, columns);
+        auto end = IterForView(data.begin() + col_idx + rows * columns, columns);
+        return {beg, end};
+    }
+    VecView<IterForViewConst> const column(int col_idx) const {
+        auto beg = IterForViewConst(data.cbegin() + col_idx, columns);
+        auto end = IterForViewConst(data.cbegin() + col_idx + rows * columns, columns);
+        return {beg, end};
+    }
+    VecView<IterForView> operator[](int row_idx) {
+        return row(row_idx);
+    }
+    VecView<IterForViewConst> const operator[](int row_idx) const {
+        return row(row_idx);
     }
     T trace() const {
-        T sum = 0;
         assert(rows == columns);
+        T sum = 0;
         for (int i = 0; i < rows; i++) {
             sum += get(i, i);
         }
@@ -280,7 +320,7 @@ public:
                 os << ",";
             os << '\n';
         }
-        os << "]\n";
+        os << "]";
         return os;
     }
 
