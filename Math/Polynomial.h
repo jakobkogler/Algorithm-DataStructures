@@ -167,6 +167,22 @@ public:
         return os;
     }
 
+    /**
+     * Computes the reciprocal polynomial modulo x^n in O(n log(n))
+     */
+    Polynomial<T> reciprocal(int n) const {
+        assert(coeffs.size() && coeffs[0] != 0);
+        int sz = 1;
+        Polynomial<T> R({T(1) / coeffs[0]});
+        while (sz < n) {
+            // trick from adamant
+            auto C = (R * (*this % (3 * sz))).substr(sz, 2 * sz);
+            R -= (R * C % sz) << sz;
+            sz *= 2;
+        }
+        return R % n;
+    }
+
     void shorten() {
         while (coeffs.size() > 0 && coeffs.back() == 0)
             coeffs.pop_back();
@@ -203,22 +219,6 @@ private:
         if (cpy.coeffs.size())
             cpy.coeffs.insert(cpy.coeffs.begin(), n, T(0));
         return cpy;
-    }
-
-    /**
-     * Computes the reciprocal polynomial modulo x^n in O(n log(n))
-     */
-    Polynomial<T> reciprocal(int n) const {
-        assert(coeffs.size() && coeffs[0] != 0);
-        int sz = 1;
-        Polynomial<T> R({T(1) / coeffs[0]});
-        while (sz < n) {
-            // trick from adamant
-            auto C = (R * (*this % (3 * sz))).substr(sz, 2 * sz);
-            R -= (R * C % sz) << sz;
-            sz *= 2;
-        }
-        return R % n;
     }
 
     /**
