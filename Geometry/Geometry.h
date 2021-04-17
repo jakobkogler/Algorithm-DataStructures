@@ -102,28 +102,28 @@ bool Point2D<long long>::operator==(Point2D const& p) {
 }
 
 template <class T>
-class Line {
+class Line2D {
 public:
     // ax + by + c = 0
-    Line(T a, T b, T c) : a(a), b(b), c(c) {}
+    Line2D(T a, T b, T c) : a(a), b(b), c(c) {}
     // y = kx + d
-    Line(T k, T d) : a(k), b(-1), c(d) {}
+    Line2D(T k, T d) : a(k), b(-1), c(d) {}
     // point, point
-    Line(Point2D<T> p, Point2D<T> q) 
+    Line2D(Point2D<T> p, Point2D<T> q) 
         : a(q.y - p.y), 
           b(p.x - q.x),
           c(p.y * q.x - p.x * q.y) {}
     // point + vector
-    Line(Point2D<T> p, Vector2D<T> v) :
+    Line2D(Point2D<T> p, Vector2D<T> v) :
         a(-v.y), 
         b(v.x), 
         c(p.x*v.y - p.y*v.x) {}
 
-    bool parallel(Line const& other) const {
+    bool parallel(Line2D const& other) const {
         return std::abs(det(a, b, other.a, other.b)) < EPS;
     }
 
-    Point2D<T> intersect(Line const& other) const {
+    Point2D<T> intersect(Line2D const& other) const {
         double d = det(a, b, other.a, other.b);
         double x = -det(c, b, other.c, other.b) / d;
         double y = -det(a, c, other.a, other.c) / d;
@@ -142,19 +142,19 @@ public:
 };
 
 template <>
-bool Line<long long>::parallel(Line<long long> const& other) const {
+bool Line2D<long long>::parallel(Line2D<long long> const& other) const {
     return det(a, b, other.a, other.b) == 0;
 }
 
 template <>
-bool Line<long long>::contains(Point2D<long long> const& p) const {
+bool Line2D<long long>::contains(Point2D<long long> const& p) const {
     return a*p.x + b*p.y + c == 0;
 }
 
 template <class T>
-class Segment : public Line<T> {
+class Segment2D : public Line2D<T> {
 public:
-    Segment(Point2D<T> p, Point2D<T> q) : Line<T>(p, q), p(p), q(q) {}
+    Segment2D(Point2D<T> p, Point2D<T> q) : Line2D<T>(p, q), p(p), q(q) {}
 
     bool between_1d(T const x, T const b1, T const b2) const {
         return min(b1, b2) <= x && x <= max(b1, b2);
@@ -163,23 +163,23 @@ public:
     bool contains(Point2D<T> const& pt) const override {
         if (!between_1d(pt.x, p.x, q.x) || !between_1d(pt.y, p.y, q.y))
             return false;
-        return Line<T>::contains(pt);
+        return Line2D<T>::contains(pt);
     }
 
     Point2D<T> p, q;
 };
 
 template <class T>
-class Circle {
+class Circle2D {
 public:
-    Circle(Point2D<T> m, T r) : m(m), r(r) {}
-    Circle(T r) : m({0, 0}), r(r) {}
+    Circle2D(Point2D<T> m, T r) : m(m), r(r) {}
+    Circle2D(T r) : m({0, 0}), r(r) {}
 
     bool inside(Point2D<T> p) {
         return (p - m).length2() < r*r;
     }
 
-    std::vector<Point2D<T>> intersect(Line<T> line) {
+    std::vector<Point2D<T>> intersect(Line2D<T> line) {
         std::vector<Point2D<T>> intersections;
         T a = line.a;
         T b = line.b;
@@ -202,8 +202,8 @@ public:
         return intersections;
     }
 
-    std::vector<Point2D<T>> intersect(Circle other) {
-        Line<T> line(2*(other.m.x - m.x), 
+    std::vector<Point2D<T>> intersect(Circle2D other) {
+        Line2D<T> line(2*(other.m.x - m.x), 
                   2*(other.m.y - m.y), 
                   sq(other.r) - sq(r) + sq(m.x) + sq(m.y)
                   - sq(other.m.x) - sq(other.m.y));
