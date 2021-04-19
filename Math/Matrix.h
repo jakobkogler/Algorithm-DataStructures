@@ -78,7 +78,7 @@ public:
         return *std::min_element(this->begin(), this->end());
     }
     T max() const {
-        return *std::min_element(this->begin(), this->end());
+        return *std::max_element(this->begin(), this->end());
     }
 
     friend Vec& operator+=(Vec& v, Vec const& w) {
