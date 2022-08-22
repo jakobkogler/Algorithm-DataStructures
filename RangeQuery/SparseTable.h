@@ -3,7 +3,7 @@
 class SparseTable
 {
 public:
-    SparseTable(std::vector<int> v)
+    SparseTable(const std::vector<int> &v)
     {
         log_table.assign(v.size() + 1, 0);
         for (auto i = 2UL; i < log_table.size(); i++)
