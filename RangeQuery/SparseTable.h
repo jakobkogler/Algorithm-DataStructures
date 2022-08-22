@@ -24,7 +24,7 @@ public:
     {
         int log = log_table[r - l];
         return std::min(sparse_table[log][l],
-                        sparse_table[log][r - (1 << log)]);
+                        sparse_table[log][r - (1 << log) + 1]);
     }
 
 private:
